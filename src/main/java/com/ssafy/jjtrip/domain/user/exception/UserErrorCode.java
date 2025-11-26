@@ -1,7 +1,6 @@
 package com.ssafy.jjtrip.domain.user.exception;
 
 import com.ssafy.jjtrip.common.exception.ErrorCode;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,7 +15,5 @@ public enum UserErrorCode implements ErrorCode {
 
     private final String code;
     private final String message;
-
-    @JsonIgnore
     private final HttpStatus status;
 }
