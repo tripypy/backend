@@ -1,7 +1,7 @@
 package com.ssafy.jjtrip.common.exception;
 
+import com.ssafy.jjtrip.common.exception.ErrorResponse.InvalidParam;
 import java.util.List;
-
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-
-import com.ssafy.jjtrip.common.exception.ErrorResponse.InvalidParam;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -33,16 +31,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .map(ErrorResponse.InvalidParam::from)
                 .toList();
 
-        return ErrorResponse.of(ErrorCode.INVALID_REQUEST, invalidParams).toResponseEntity();
+        return ErrorResponse.of(CommonErrorCode.INVALID_REQUEST, invalidParams).toResponseEntity();
     }
 
 	@ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ErrorResponse.from(ErrorCode.INVALID_REQUEST).toResponseEntity();
+        return ErrorResponse.from(CommonErrorCode.INVALID_REQUEST).toResponseEntity();
     }
 	
 	@ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGenericException(Exception ex) {
-        return ErrorResponse.from(ErrorCode.INTERNAL_SERVER_ERROR).toResponseEntity();
+        return ErrorResponse.from(CommonErrorCode.INTERNAL_SERVER_ERROR).toResponseEntity();
     }
 }
