@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.jjtrip.domain.user.mapper.UserMapper">
+
+    <resultMap id="userResultMap" type="com.ssafy.jjtrip.domain.user.entity.User">
+        <id property="id" column="id"/>
+        <result property="email" column="email"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="nickname" column="nickname"/>
+        <result property="profileImageUrl" column="profile_image_url"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <!-- role_id 컬럼을 Role 타입으로 매핑. TypeHandler가 자동으로 처리 -->
+        <result property="role" column="role_id" javaType="com.ssafy.jjtrip.domain.user.entity.Role" />
+        <!-- status_id 컬럼을 UserStatus 타입으로 매핑. -->
+        <result property="status" column="status_id" javaType="com.ssafy.jjtrip.domain.user.entity.UserStatus" />
+    </resultMap>
+
+    <select id="findById" parameterType="long" resultMap="userResultMap">
+        SELECT
+            id, role_id, status_id, email, password_hash, nickname, profile_image_url, created_at, updated_at
+        FROM
+            user
+        WHERE
+            id = #{id}
+    </select>
+
+    <insert id="insertUser" parameterType="com.ssafy.jjtrip.domain.user.entity.User">
+        INSERT INTO user (role_id, status_id, email, password_hash, nickname, profile_image_url)
+        VALUES (#{role}, #{status}, #{email}, #{passwordHash}, #{nickname}, #{profileImageUrl})
+    </insert>
+
+</mapper>
