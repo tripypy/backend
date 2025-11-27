@@ -6,7 +6,6 @@ import com.ssafy.jjtrip.domain.auth.dto.LoginResponseDto;
 import com.ssafy.jjtrip.domain.auth.dto.SignupRequestDto;
 import com.ssafy.jjtrip.domain.auth.dto.TokenInfo;
 import com.ssafy.jjtrip.domain.auth.service.AuthService;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +32,7 @@ public class AuthController {
     private long refreshTokenExpireTimeMs;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request, HttpServletResponse response) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
         TokenInfo tokenInfo = authService.login(request.email(), request.password());
         CustomUserDetails user = (CustomUserDetails) getAuthentication().getPrincipal();
 
