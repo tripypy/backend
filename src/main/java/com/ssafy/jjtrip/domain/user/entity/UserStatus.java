@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 public enum UserStatus {
 
     ACTIVE(1L, "ACTIVE", "활성", "정상 사용 가능한 계정"),
-    DELETE(2L, "DELETED", "탈퇴", "탈퇴한 계정 (로그인 불가)");
+    DELETED(2L, "DELETED", "탈퇴", "탈퇴한 계정 (로그인 불가)");
 
     private final Long id;
     private final String code;
