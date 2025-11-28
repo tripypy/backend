@@ -1,11 +1,13 @@
 package com.ssafy.jjtrip.domain.auth.controller;
 
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
+import com.ssafy.jjtrip.domain.auth.api.AuthApi;
 import com.ssafy.jjtrip.domain.auth.dto.LoginRequestDto;
 import com.ssafy.jjtrip.domain.auth.dto.LoginResponseDto;
 import com.ssafy.jjtrip.domain.auth.dto.SignupRequestDto;
 import com.ssafy.jjtrip.domain.auth.dto.TokenInfo;
 import com.ssafy.jjtrip.domain.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthController {
+@Tag(name = "Auth", description = "인증 관련 API")
+public class AuthController implements AuthApi {
 
     private final AuthService authService;
 
