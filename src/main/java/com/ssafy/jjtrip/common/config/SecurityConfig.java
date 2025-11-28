@@ -33,6 +33,15 @@ public class SecurityConfig {
     @Value("${security.cors.allowed-origins}")
     private String[] allowedOrigins;
 
+    private static final String[] SWAGGER_URLS = {
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/api/swagger-ui/**",
+            "/api/v3/api-docs/**",
+            "/api/swagger-resources/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -45,6 +54,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(SWAGGER_URLS).permitAll()
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/refresh",
