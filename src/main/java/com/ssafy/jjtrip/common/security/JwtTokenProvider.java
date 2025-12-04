@@ -79,7 +79,7 @@ public class JwtTokenProvider {
         Long userId = claims.get("id", Long.class);
         String nickname = claims.get("nickname", String.class);
         String roleStr = claims.get("role", String.class);
-        Role role = Role.valueOf(roleStr); // String -> Enum 변환
+        Role role = Role.valueOf(roleStr);
 
         Collection<? extends GrantedAuthority> authorities =
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));

@@ -27,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final String REDIS_REFRESH_TOKEN_PREFIX = "RefreshToken:";
+    private static final String REDIS_BLACKLIST_PREFIX = "BlackList:";
+
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
@@ -44,7 +47,7 @@ public class AuthService {
         Authentication authentication = authenticate(email, password);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         TokenInfo tokenInfo = issueTokens(authentication);
-        redisUtil.set("RefreshToken:" + email, tokenInfo.refreshToken(), refreshTokenExpireTimeMs);
+        redisUtil.set(REDIS_REFRESH_TOKEN_PREFIX + email, tokenInfo.refreshToken(), refreshTokenExpireTimeMs);
 
         return tokenInfo;
     }
@@ -56,13 +59,13 @@ public class AuthService {
         Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
         String email = authentication.getName();
 
-        if (redisUtil.hasKey("RefreshToken:" + email)) {
-            redisUtil.delete("RefreshToken:" + email);
+        if (redisUtil.hasKey(REDIS_REFRESH_TOKEN_PREFIX + email)) {
+            redisUtil.delete(REDIS_REFRESH_TOKEN_PREFIX + email);
         }
 
         long expiration = jwtTokenProvider.getRemainingExpireTime(accessToken);
         if (expiration > 0) {
-            redisUtil.setBlackList("BlackList:" + accessToken, "logout", expiration);
+            redisUtil.set(REDIS_BLACKLIST_PREFIX + accessToken, "logout", expiration);
         }
     }
 
@@ -78,7 +81,7 @@ public class AuthService {
         jwtTokenProvider.validateToken(refreshToken);
 
         String email = jwtTokenProvider.getSubject(refreshToken);
-        String savedToken = redisUtil.get("RefreshToken:" + email);
+        String savedToken = redisUtil.get(REDIS_REFRESH_TOKEN_PREFIX + email);
         if (savedToken == null || !savedToken.equals(refreshToken)) {
             throw new AuthException(AuthErrorCode.JWT_TOKEN_INVALID);
         }
@@ -90,7 +93,7 @@ public class AuthService {
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
 
         TokenInfo newTokenInfo = issueTokens(authentication);
-        redisUtil.set("RefreshToken:" + email, newTokenInfo.refreshToken(), refreshTokenExpireTimeMs);
+        redisUtil.set(REDIS_REFRESH_TOKEN_PREFIX + email, newTokenInfo.refreshToken(), refreshTokenExpireTimeMs);
 
         return newTokenInfo;
     }

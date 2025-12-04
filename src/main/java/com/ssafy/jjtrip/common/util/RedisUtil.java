@@ -26,12 +26,4 @@ public class RedisUtil {
     public boolean hasKey(String key) {
         return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
     }
-
-    public void setBlackList(String key, String value, long expireTimeMs) {
-        stringRedisTemplate.opsForValue().set(key, value, Duration.ofMillis(expireTimeMs));
-    }
-
-    public boolean hasKeyBlackList(String key) {
-        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
-    }
 }

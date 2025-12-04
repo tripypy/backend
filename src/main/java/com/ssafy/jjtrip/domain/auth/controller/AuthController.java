@@ -1,7 +1,12 @@
 package com.ssafy.jjtrip.domain.auth.controller;
 
+import static com.ssafy.jjtrip.common.security.JwtAuthenticationFilter.AUTHORIZATION_HEADER;
+import static com.ssafy.jjtrip.common.security.JwtAuthenticationFilter.BEARER_PREFIX;
+
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.auth.dto.*;
+import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
+import com.ssafy.jjtrip.domain.auth.exception.AuthException;
 import com.ssafy.jjtrip.domain.auth.service.AuthService;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -19,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    public static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
     private final AuthService authService;
 
@@ -43,11 +50,11 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<?> logout(@RequestHeader(AUTHORIZATION_HEADER) String accessToken) {
         String token = resolveToken(accessToken);
         authService.logout(token);
 
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+        ResponseCookie cookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
                 .maxAge(0)
                 .path("/")
                 .secure(true)
@@ -71,7 +78,7 @@ public class AuthController {
     }
 
     private ResponseCookie createRefreshTokenCookie(String refreshToken) {
-        return ResponseCookie.from("refreshToken", refreshToken)
+        return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, refreshToken)
                 .maxAge(Duration.ofMillis(refreshTokenExpireTimeMs))
                 .path("/")
                 .secure(true)
@@ -81,9 +88,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+    public ResponseEntity<?> refresh(@CookieValue(value = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken) {
         if (refreshToken == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token이 없습니다.");
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_NOT_FOUND);
         }
 
         TokenInfo tokenInfo = authService.refresh(refreshToken);
@@ -99,8 +106,8 @@ public class AuthController {
     }
 
     private String resolveToken(String bearerToken) {
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        if (bearerToken != null && bearerToken.startsWith(BEARER_PREFIX)) {
+            return bearerToken.substring(BEARER_PREFIX.length());
         }
         return null;
     }
