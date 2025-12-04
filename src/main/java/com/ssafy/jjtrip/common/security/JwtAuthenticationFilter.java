@@ -1,5 +1,8 @@
 package com.ssafy.jjtrip.common.security;
 
+import com.ssafy.jjtrip.common.util.RedisUtil;
+import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
+import com.ssafy.jjtrip.domain.auth.exception.AuthException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +22,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisUtil redisUtil;
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER_PREFIX = "Bearer ";
+    public static final String BLACKLIST_PREFIX = "BlackList:";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -30,9 +35,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         if (StringUtils.hasText(token)) {
-            // validateToken 내부에서 예외 처리를 하므로, 필터에서는 호출만 합니다.
-            // 예외 발생 시 뒤에 있는 JwtExceptionFilter에서 처리합니다.
             jwtTokenProvider.validateToken(token);
+
+            if (redisUtil.hasKey(BLACKLIST_PREFIX + token)) {
+                throw new AuthException(AuthErrorCode.JWT_TOKEN_INVALID);
+            }
+
             Authentication authentication = jwtTokenProvider.getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
@@ -43,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(7);
+            return bearerToken.substring(BEARER_PREFIX.length());
         }
         return null;
     }
