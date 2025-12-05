@@ -54,8 +54,6 @@ public class AuthService {
 
     @Transactional
     public void logout(String accessToken) {
-        jwtTokenProvider.validateToken(accessToken);
-
         Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
         String email = authentication.getName();
 
