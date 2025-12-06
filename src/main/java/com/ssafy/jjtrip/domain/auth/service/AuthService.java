@@ -4,6 +4,7 @@ import com.ssafy.jjtrip.common.mail.EmailService;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.common.security.JwtTokenProvider;
 import com.ssafy.jjtrip.common.util.RedisUtil;
+import com.ssafy.jjtrip.common.util.EmailMasker;
 import com.ssafy.jjtrip.domain.auth.dto.SignupRequestDto;
 import com.ssafy.jjtrip.domain.auth.dto.TokenInfo;
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
@@ -92,7 +93,7 @@ public class AuthService {
     public String findEmailByNickname(String nickname) {
         User user = userMapper.findByNickname(nickname)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
-        return user.getEmail();
+        return EmailMasker.maskEmail(user.getEmail());
     }
 
     @Transactional
