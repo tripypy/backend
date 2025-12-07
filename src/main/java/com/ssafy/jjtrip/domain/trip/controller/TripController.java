@@ -2,7 +2,6 @@ package com.ssafy.jjtrip.domain.trip.controller;
 
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
-import com.ssafy.jjtrip.domain.trip.dto.TripItemAddRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemsUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
@@ -16,7 +15,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -84,20 +82,8 @@ public class TripController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{tripId}/items")
-    public ResponseEntity<?> addTripItem(
-            @PathVariable Long tripId,
-            @Valid @RequestBody TripItemAddRequestDto requestDto,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        TripItem createdTripItem = tripService.addTripItem(tripId, userDetails.getUser().getId(), requestDto);
-        TripItemResponseDto responseDto = TripItemResponseDto.from(createdTripItem);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-    }
-
     @PutMapping("/{tripId}/items")
-    public ResponseEntity<List<TripItemResponseDto>> updateAllTripItems(
+    public ResponseEntity<?> updateAllTripItems(
             @PathVariable Long tripId,
             @Valid @RequestBody TripItemsUpdateRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails

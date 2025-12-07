@@ -64,6 +64,34 @@ public interface TripMapper {
             "ORDER BY day_number, order_index")
     List<TripItem> selectItemsByTripId(Long tripId);
 
+    @Select("SELECT " +
+            "ti.id, ti.trip_id, ti.spot_id, ti.day_number, ti.order_index, ti.memo, ti.created_at, " +
+            "s.id as s_id, s.kakao_place_id as s_kakao_place_id, s.name as s_name, s.address as s_address, s.category as s_category, " +
+            "s.lat as s_lat, s.lng as s_lng, s.place_url as s_place_url, s.thumbnail_url as s_thumbnail_url " +
+            "FROM trip_item ti " +
+            "JOIN spot s ON ti.spot_id = s.id " +
+            "WHERE ti.trip_id = #{tripId} " +
+            "ORDER BY ti.day_number, ti.order_index")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "tripId", column = "trip_id"),
+            @Result(property = "spotId", column = "spot_id"),
+            @Result(property = "dayNumber", column = "day_number"),
+            @Result(property = "orderIndex", column = "order_index"),
+            @Result(property = "memo", column = "memo"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "spot.id", column = "s_id"),
+            @Result(property = "spot.kakaoPlaceId", column = "s_kakao_place_id"),
+            @Result(property = "spot.name", column = "s_name"),
+            @Result(property = "spot.address", column = "s_address"),
+            @Result(property = "spot.category", column = "s_category"),
+            @Result(property = "spot.lat", column = "s_lat"),
+            @Result(property = "spot.lng", column = "s_lng"),
+            @Result(property = "spot.placeUrl", column = "s_place_url"),
+            @Result(property = "spot.thumbnailUrl", column = "s_thumbnail_url")
+    })
+    List<TripItem> selectItemsWithSpotsByTripId(Long tripId);
+
     @Update("UPDATE trip SET title = #{title}, start_date = #{startDate}, end_date = #{endDate}, status = #{status} " +
             "WHERE id = #{id}")
     void update(Trip trip);
@@ -99,6 +127,19 @@ public interface TripMapper {
     })
     void deleteTripItemsByIds(@Param("list") List<Long> tripItemIds);
 
-    @Update("UPDATE trip_item SET day_number = #{dayNumber}, order_index = #{orderIndex} WHERE id = #{tripItemId}")
-    void updateTripItemDetails(@Param("tripItemId") Long tripItemId, @Param("dayNumber") Integer dayNumber, @Param("orderIndex") int orderIndex);
+    @Update("UPDATE trip_item SET day_number = #{dayNumber}, order_index = #{orderIndex}, memo = #{memo} WHERE id = #{id}")
+    void updateTripItemDetails(@Param("id") Long id, @Param("dayNumber") int dayNumber, @Param("orderIndex") int orderIndex, @Param("memo") String memo);
+
+    @Update({
+        "<script>",
+        "UPDATE trip_item",
+        "SET order_index = -order_index",
+        "WHERE id IN",
+        "<foreach item='id' collection='ids' open='(' separator=',' close=')'>",
+        "#{id}",
+        "</foreach>",
+        "</script>"
+    })
+    void parkTripItems(@Param("ids") List<Long> ids);
 }
+
