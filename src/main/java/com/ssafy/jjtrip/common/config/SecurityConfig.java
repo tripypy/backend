@@ -56,6 +56,8 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/refresh",
                                 "/api/auth/signup",
+                                "/api/auth/find-email/**",
+                                "/api/auth/reset-password",
                                 "/api/auth/logout"
                         ).permitAll()
                         .anyRequest().authenticated()

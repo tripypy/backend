@@ -73,6 +73,18 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetRequestDto request) {
+        authService.resetPassword(request.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/find-email/{nickname}")
+    public ResponseEntity<?> findEmailByNickname(@PathVariable("nickname") String nickname) {
+        String email = authService.findEmailByNickname(nickname);
+        return ResponseEntity.ok(java.util.Map.of("email", email));
+    }
+
     private Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
     }
