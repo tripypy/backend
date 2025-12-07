@@ -13,14 +13,12 @@ public record TripItemAddRequestDto(
         Integer dayNumber,
 
         @NotNull
-        @Min(value = 0, message = "순서(orderIndex)는 0 이상이어야 합니다.")
+        @Min(value = 1, message = "순서(orderIndex)는 1 이상이어야 합니다.")
         Integer orderIndex,
 
         String memo,
 
-        @Valid
-        @NotNull
+        @Valid @NotNull
         SpotRequestDto spot
 ) {
 }
-

@@ -88,4 +88,17 @@ public interface TripMapper {
         "</script>"
     })
     void insertTripItems(@Param("list") List<TripItem> tripItems);
+
+    @Delete({
+        "<script>",
+        "DELETE FROM trip_item WHERE id IN ",
+        "<foreach item='item' collection='list' open='(' separator=',' close=')'>",
+        "#{item}",
+        "</foreach>",
+        "</script>"
+    })
+    void deleteTripItemsByIds(@Param("list") List<Long> tripItemIds);
+
+    @Update("UPDATE trip_item SET day_number = #{dayNumber}, order_index = #{orderIndex} WHERE id = #{tripItemId}")
+    void updateTripItemDetails(@Param("tripItemId") Long tripItemId, @Param("dayNumber") Integer dayNumber, @Param("orderIndex") int orderIndex);
 }

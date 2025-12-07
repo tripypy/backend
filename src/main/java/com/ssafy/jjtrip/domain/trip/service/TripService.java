@@ -2,7 +2,9 @@ package com.ssafy.jjtrip.domain.trip.service;
 
 import com.ssafy.jjtrip.domain.spot.entity.Spot;
 import com.ssafy.jjtrip.domain.spot.service.SpotService;
+import com.ssafy.jjtrip.domain.trip.dto.DayItemsDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemAddRequestDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripItemsUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripItem;
@@ -10,11 +12,14 @@ import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
 import com.ssafy.jjtrip.domain.trip.exception.TripErrorCode;
 import com.ssafy.jjtrip.domain.trip.exception.TripException;
 import com.ssafy.jjtrip.domain.trip.mapper.TripMapper;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -84,6 +89,56 @@ public class TripService {
 
         Spot spot = spotService.findOrCreate(requestDto.spot().toEntity());
         return createAndSaveTripItem(tripId, spot, requestDto);
+    }
+
+    @Transactional
+    public List<TripItem> updateAllTripItems(Long tripId, TripItemsUpdateRequestDto requestDto, Long userId) {
+        getTripForModification(tripId, userId);
+
+        Set<Long> existingItemIds = tripMapper.selectItemsByTripId(tripId)
+                .stream()
+                .map(TripItem::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> requestedItemIds = getRequestedItemIds(requestDto);
+
+        deleteRemovedTripItems(existingItemIds, requestedItemIds);
+        validateRequestedItems(existingItemIds, requestedItemIds);
+        updateTripItemDetails(requestDto.days());
+
+        return tripMapper.selectItemsByTripId(tripId);
+    }
+
+    private Set<Long> getRequestedItemIds(TripItemsUpdateRequestDto requestDto) {
+        return requestDto.days().stream()
+                .flatMap(day -> day.items().stream())
+                .collect(Collectors.toSet());
+    }
+
+    private void deleteRemovedTripItems(Set<Long> existingItemIds, Set<Long> requestedItemIds) {
+        Set<Long> idsToDelete = new HashSet<>(existingItemIds);
+        idsToDelete.removeAll(requestedItemIds);
+        if (!idsToDelete.isEmpty()) {
+            tripMapper.deleteTripItemsByIds(new ArrayList<>(idsToDelete));
+        }
+    }
+
+    private void validateRequestedItems(Set<Long> existingItemIds, Set<Long> requestedItemIds) {
+        Set<Long> intersection = new HashSet<>(requestedItemIds);
+        intersection.retainAll(existingItemIds);
+        if (intersection.size() != requestedItemIds.size()) {
+            throw new TripException(TripErrorCode.INVALID_ITEMS_UPDATE_REQUEST);
+        }
+    }
+
+    private void updateTripItemDetails(List<DayItemsDto> requestedDays) {
+        for (DayItemsDto day : requestedDays) {
+            for (int i = 0; i < day.items().size(); i++) {
+                Long tripItemId = day.items().get(i);
+                int orderIndex = i + 1; // 1-based index
+                tripMapper.updateTripItemDetails(tripItemId, day.dayNumber(), orderIndex);
+            }
+        }
     }
 
     private Trip findTripById(Long tripId) {

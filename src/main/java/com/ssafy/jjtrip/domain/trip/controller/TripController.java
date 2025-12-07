@@ -4,6 +4,7 @@ import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemAddRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemResponseDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripItemsUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
@@ -93,5 +94,18 @@ public class TripController {
         TripItemResponseDto responseDto = TripItemResponseDto.from(createdTripItem);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    }
+
+    @PutMapping("/{tripId}/items")
+    public ResponseEntity<List<TripItemResponseDto>> updateAllTripItems(
+            @PathVariable Long tripId,
+            @Valid @RequestBody TripItemsUpdateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<TripItem> updatedItems = tripService.updateAllTripItems(tripId, requestDto, userDetails.getUser().getId());
+        List<TripItemResponseDto> responseDtos = updatedItems.stream()
+                .map(TripItemResponseDto::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responseDtos);
     }
 }
