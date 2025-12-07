@@ -1,5 +1,8 @@
 package com.ssafy.jjtrip.domain.trip.service;
 
+import com.ssafy.jjtrip.domain.spot.entity.Spot;
+import com.ssafy.jjtrip.domain.spot.service.SpotService;
+import com.ssafy.jjtrip.domain.trip.dto.TripItemAddRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripItem;
@@ -7,10 +10,11 @@ import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
 import com.ssafy.jjtrip.domain.trip.exception.TripErrorCode;
 import com.ssafy.jjtrip.domain.trip.exception.TripException;
 import com.ssafy.jjtrip.domain.trip.mapper.TripMapper;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TripService {
 
     private final TripMapper tripMapper;
+    private final SpotService spotService;
 
     @Transactional
     public Trip createTrip(Long userId) {
@@ -52,11 +57,7 @@ public class TripService {
 
     @Transactional
     public void updateTrip(Long tripId, TripUpdateRequestDto requestDto, Long userId) {
-        Trip trip = findTripById(tripId);
-
-        if (!trip.getUserId().equals(userId)) {
-            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
-        }
+        Trip trip = getTripForModification(tripId, userId);
 
         trip.setTitle(requestDto.title());
         trip.setStartDate(requestDto.startDate());
@@ -67,17 +68,46 @@ public class TripService {
 
     @Transactional
     public void deleteTrip(Long tripId, Long userId) {
-        Trip trip = findTripById(tripId);
-
-        if (!trip.getUserId().equals(userId)) {
-            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
-        }
-        
+        getTripForModification(tripId, userId);
         tripMapper.delete(tripId);
+    }
+
+    @Transactional
+    public TripItem addTripItem(Long tripId, Long userId, TripItemAddRequestDto requestDto) {
+        getTripForModification(tripId, userId);
+
+        // 해당 위치에 이미 아이템이 존재하는지 확인
+        if (tripMapper.existsByTripIdAndDayNumberAndOrderIndex(
+                tripId, requestDto.dayNumber(), requestDto.orderIndex())) {
+            throw new TripException(TripErrorCode.ITEM_POSITION_ALREADY_EXISTS);
+        }
+
+        Spot spot = spotService.findOrCreate(requestDto.spot().toEntity());
+        return createAndSaveTripItem(tripId, spot, requestDto);
     }
 
     private Trip findTripById(Long tripId) {
         return tripMapper.selectById(tripId)
                 .orElseThrow(() -> new TripException(TripErrorCode.TRIP_NOT_FOUND));
+    }
+
+    private Trip getTripForModification(Long tripId, Long userId) {
+        Trip trip = findTripById(tripId);
+        if (!trip.getUserId().equals(userId)) {
+            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
+        }
+        return trip;
+    }
+
+    private TripItem createAndSaveTripItem(Long tripId, Spot spot, TripItemAddRequestDto requestDto) {
+        TripItem tripItem = TripItem.builder()
+                .tripId(tripId)
+                .spotId(spot.getId())
+                .dayNumber(requestDto.dayNumber())
+                .orderIndex(requestDto.orderIndex())
+                .memo(requestDto.memo())
+                .build();
+        tripMapper.insertTripItem(tripItem);
+        return tripItem;
     }
 }

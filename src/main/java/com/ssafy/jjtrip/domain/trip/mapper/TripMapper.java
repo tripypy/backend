@@ -71,6 +71,14 @@ public interface TripMapper {
     @Delete("DELETE FROM trip WHERE id = #{tripId}")
     void delete(Long tripId);
 
+    @Insert("INSERT INTO trip_item (trip_id, spot_id, day_number, order_index, memo) " +
+            "VALUES (#{tripId}, #{spotId}, #{dayNumber}, #{orderIndex}, #{memo})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insertTripItem(TripItem tripItem);
+
+    @Select("SELECT COUNT(*) > 0 FROM trip_item WHERE trip_id = #{tripId} AND day_number = #{dayNumber} AND order_index = #{orderIndex}")
+    boolean existsByTripIdAndDayNumberAndOrderIndex(@Param("tripId") Long tripId, @Param("dayNumber") Integer dayNumber, @Param("orderIndex") Integer orderIndex);
+
     @Insert({
         "<script>",
         "INSERT INTO trip_item (trip_id, spot_id, day_number, order_index, memo) VALUES ",

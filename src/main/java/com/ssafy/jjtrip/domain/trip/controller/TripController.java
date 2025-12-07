@@ -2,9 +2,12 @@ package com.ssafy.jjtrip.domain.trip.controller;
 
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripItemAddRequestDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripItemResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
+import com.ssafy.jjtrip.domain.trip.entity.TripItem;
 import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
 import com.ssafy.jjtrip.domain.trip.service.TripService;
 import jakarta.validation.Valid;
@@ -12,6 +15,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -77,5 +81,17 @@ public class TripController {
     public ResponseEntity<?> deleteTrip(@PathVariable Long tripId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         tripService.deleteTrip(tripId, userDetails.getUser().getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{tripId}/items")
+    public ResponseEntity<?> addTripItem(
+            @PathVariable Long tripId,
+            @Valid @RequestBody TripItemAddRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        TripItem createdTripItem = tripService.addTripItem(tripId, userDetails.getUser().getId(), requestDto);
+        TripItemResponseDto responseDto = TripItemResponseDto.from(createdTripItem);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 }
