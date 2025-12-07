@@ -60,6 +60,7 @@ public class SecurityConfig {
                                 "/api/auth/reset-password",
                                 "/api/auth/logout"
                         ).permitAll()
+                        .requestMatchers("/api/user/**").authenticated()
                         .anyRequest().authenticated()
                 )
 

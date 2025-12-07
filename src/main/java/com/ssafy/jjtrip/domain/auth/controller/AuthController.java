@@ -8,6 +8,7 @@ import com.ssafy.jjtrip.domain.auth.dto.*;
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
 import com.ssafy.jjtrip.domain.auth.exception.AuthException;
 import com.ssafy.jjtrip.domain.auth.service.AuthService;
+import com.ssafy.jjtrip.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class AuthController {
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
     private final AuthService authService;
+    private final UserService userService;
 
     @Value("${app.jwt.refresh-token-expire-time}")
     private long refreshTokenExpireTimeMs;
@@ -75,13 +77,13 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetRequestDto request) {
-        authService.resetPassword(request.email());
+        userService.resetPassword(request.email());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/find-email/{nickname}")
     public ResponseEntity<?> findEmailByNickname(@PathVariable("nickname") String nickname) {
-        String email = authService.findEmailByNickname(nickname);
+        String email = userService.findEmailByNickname(nickname);
         return ResponseEntity.ok(java.util.Map.of("email", email));
     }
 

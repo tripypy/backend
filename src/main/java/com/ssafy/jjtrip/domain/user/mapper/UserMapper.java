@@ -46,6 +46,21 @@ public interface UserMapper {
     })
     Optional<User> findByNickname(String nickname);
 
+    @Select("SELECT id, role_id, status_id, email, password_hash, nickname, profile_image_url, created_at, updated_at " +
+            "FROM user WHERE id = #{id}")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "role", column = "role_id", javaType = Role.class),
+            @Result(property = "status", column = "status_id", javaType = UserStatus.class),
+            @Result(property = "email", column = "email"),
+            @Result(property = "passwordHash", column = "password_hash"),
+            @Result(property = "nickname", column = "nickname"),
+            @Result(property = "profileImageUrl", column = "profile_image_url"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    Optional<User> findById(Long id);
+
     @Insert("INSERT INTO user (role_id, status_id, email, password_hash, nickname) " +
             "VALUES (#{role}, #{status}, #{email}, #{passwordHash}, #{nickname})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -53,4 +68,7 @@ public interface UserMapper {
 
     @Update("UPDATE user SET password_hash = #{passwordHash} WHERE id = #{userId}")
     void updatePasswordHash(@Param("userId") Long userId, @Param("passwordHash") String passwordHash);
+
+    @Update("UPDATE user SET profile_image_url = #{imageUrl} WHERE id = #{userId}")
+    void updateProfileImageUrl(@Param("userId") Long userId, @Param("imageUrl") String imageUrl);
 }
