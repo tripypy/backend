@@ -3,57 +3,55 @@ package com.ssafy.jjtrip.domain.trip.mapper;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripItem;
 import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
+import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
+import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.type.EnumTypeHandler;
+
 import java.util.List;
 import java.util.Optional;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface TripMapper {
 
-    @Insert("INSERT INTO trip (user_id, title, start_date, end_date, status) " +
-            "VALUES (#{userId}, #{title}, #{startDate}, #{endDate}, #{status})")
+    @Insert("INSERT INTO trip (user_id, trip_status_id, visibility, title, start_date, end_date) " +
+            "VALUES (#{userId}, #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler}, #{visibility, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, #{title}, #{startDate}, #{endDate})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Trip trip);
 
-    @Select("SELECT id, user_id, title, start_date, end_date, status, created_at, updated_at " +
+    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, created_at, updated_at " +
             "FROM trip WHERE user_id = #{userId} ORDER BY created_at DESC")
     @Results({
             @Result(property = "userId", column = "user_id"),
+            @Result(property = "status", column = "trip_status_id", javaType = TripStatus.class, typeHandler = TripStatusIdTypeHandler.class),
+            @Result(property = "visibility", column = "visibility", javaType = TripVisibility.class, typeHandler = EnumTypeHandler.class),
             @Result(property = "startDate", column = "start_date"),
             @Result(property = "endDate", column = "end_date"),
-            @Result(property = "status", column = "status", typeHandler = TripStatusTypeHandler.class),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
     List<Trip> selectByUserId(Long userId);
 
-    @Select("SELECT id, user_id, title, start_date, end_date, status, created_at, updated_at " +
-            "FROM trip WHERE user_id = #{userId} AND status = #{status} ORDER BY created_at DESC")
+    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, created_at, updated_at " +
+            "FROM trip WHERE user_id = #{userId} AND trip_status_id = #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler} ORDER BY created_at DESC")
     @Results({
             @Result(property = "userId", column = "user_id"),
+            @Result(property = "status", column = "trip_status_id", javaType = TripStatus.class, typeHandler = TripStatusIdTypeHandler.class),
+            @Result(property = "visibility", column = "visibility", javaType = TripVisibility.class, typeHandler = EnumTypeHandler.class),
             @Result(property = "startDate", column = "start_date"),
             @Result(property = "endDate", column = "end_date"),
-            @Result(property = "status", column = "status", typeHandler = TripStatusTypeHandler.class),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
     List<Trip> selectByUserIdAndStatus(@Param("userId") Long userId, @Param("status") TripStatus status);
 
-    @Select("SELECT id, user_id, title, start_date, end_date, status, created_at, updated_at " +
+    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, created_at, updated_at " +
             "FROM trip WHERE id = #{tripId}")
     @Results({
             @Result(property = "userId", column = "user_id"),
+            @Result(property = "status", column = "trip_status_id", javaType = TripStatus.class, typeHandler = TripStatusIdTypeHandler.class),
+            @Result(property = "visibility", column = "visibility", javaType = TripVisibility.class, typeHandler = EnumTypeHandler.class),
             @Result(property = "startDate", column = "start_date"),
             @Result(property = "endDate", column = "end_date"),
-            @Result(property = "status", column = "status", typeHandler = TripStatusTypeHandler.class),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
@@ -92,7 +90,12 @@ public interface TripMapper {
     })
     List<TripItem> selectItemsWithSpotsByTripId(Long tripId);
 
-    @Update("UPDATE trip SET title = #{title}, start_date = #{startDate}, end_date = #{endDate}, status = #{status} " +
+    @Update("UPDATE trip SET " +
+            "title = #{title}, " +
+            "start_date = #{startDate}, " +
+            "end_date = #{endDate}, " +
+            "trip_status_id = #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler}, " +
+            "visibility = #{visibility, typeHandler=org.apache.ibatis.type.EnumTypeHandler} " +
             "WHERE id = #{id}")
     void update(Trip trip);
 
@@ -104,26 +107,13 @@ public interface TripMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertTripItem(TripItem tripItem);
 
-    @Select("SELECT COUNT(*) > 0 FROM trip_item WHERE trip_id = #{tripId} AND day_number = #{dayNumber} AND order_index = #{orderIndex}")
-    boolean existsByTripIdAndDayNumberAndOrderIndex(@Param("tripId") Long tripId, @Param("dayNumber") Integer dayNumber, @Param("orderIndex") Integer orderIndex);
-
-    @Insert({
-        "<script>",
-        "INSERT INTO trip_item (trip_id, spot_id, day_number, order_index, memo) VALUES ",
-        "<foreach item='item' collection='list' separator=','>",
-        "(#{item.tripId}, #{item.spotId}, #{item.dayNumber}, #{item.orderIndex}, #{item.memo})",
-        "</foreach>",
-        "</script>"
-    })
-    void insertTripItems(@Param("list") List<TripItem> tripItems);
-
     @Delete({
-        "<script>",
-        "DELETE FROM trip_item WHERE id IN ",
-        "<foreach item='item' collection='list' open='(' separator=',' close=')'>",
-        "#{item}",
-        "</foreach>",
-        "</script>"
+            "<script>",
+            "DELETE FROM trip_item WHERE id IN ",
+            "<foreach item='item' collection='list' open='(' separator=',' close=')'>",
+            "#{item}",
+            "</foreach>",
+            "</script>"
     })
     void deleteTripItemsByIds(@Param("list") List<Long> tripItemIds);
 
@@ -131,15 +121,14 @@ public interface TripMapper {
     void updateTripItemDetails(@Param("id") Long id, @Param("dayNumber") int dayNumber, @Param("orderIndex") int orderIndex, @Param("memo") String memo);
 
     @Update({
-        "<script>",
-        "UPDATE trip_item",
-        "SET order_index = -order_index",
-        "WHERE id IN",
-        "<foreach item='id' collection='ids' open='(' separator=',' close=')'>",
-        "#{id}",
-        "</foreach>",
-        "</script>"
+            "<script>",
+            "UPDATE trip_item",
+            "SET order_index = -order_index",
+            "WHERE id IN",
+            "<foreach item='id' collection='ids' open='(' separator=',' close=')'>",
+            "#{id}",
+            "</foreach>",
+            "</script>"
     })
     void parkTripItems(@Param("ids") List<Long> ids);
 }
-

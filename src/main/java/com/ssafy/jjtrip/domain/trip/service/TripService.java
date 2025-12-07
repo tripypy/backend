@@ -6,6 +6,7 @@ import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripItem;
 import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
+import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
 import com.ssafy.jjtrip.domain.trip.exception.TripErrorCode;
 import com.ssafy.jjtrip.domain.trip.exception.TripException;
 import com.ssafy.jjtrip.domain.trip.mapper.TripMapper;
@@ -28,6 +29,7 @@ public class TripService {
                 .userId(userId)
                 .title("임시 여행") // 기본 제목
                 .status(TripStatus.DRAFT) // 기본 상태
+                .visibility(TripVisibility.PRIVATE) // 기본 공개 여부
                 .build();
         tripMapper.insert(newTrip);
         return newTrip;
@@ -44,7 +46,7 @@ public class TripService {
     public Trip getTripDetail(Long tripId, Long userId) {
         Trip trip = findTripById(tripId);
 
-        if (trip.getStatus() != TripStatus.PUBLIC && !trip.getUserId().equals(userId)) {
+        if (trip.getVisibility() != TripVisibility.PUBLIC && !trip.getUserId().equals(userId)) {
             throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
         }
 
@@ -61,6 +63,7 @@ public class TripService {
         trip.setStartDate(requestDto.startDate());
         trip.setEndDate(requestDto.endDate());
         trip.setStatus(requestDto.status());
+        trip.setVisibility(requestDto.visibility());
         tripMapper.update(trip);
     }
 

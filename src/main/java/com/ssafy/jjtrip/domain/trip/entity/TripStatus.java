@@ -5,13 +5,15 @@ import lombok.Getter;
 @Getter
 public enum TripStatus {
 
-    DRAFT("초안"),
-    PUBLIC("공개"),
-    PRIVATE("비공개");
+    DRAFT(1L, "작성 중"),
+    PLANNED(2L, "계획 완료"),
+    COMPLETED(3L, "여행 완료");
 
+    private final Long id;
     private final String description;
 
-    TripStatus(String description) {
+    TripStatus(Long id, String description) {
+        this.id = id;
         this.description = description;
     }
 }

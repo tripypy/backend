@@ -20,6 +20,7 @@ public class Trip extends BaseEntityWithUpdate {
     private LocalDate startDate;
     private LocalDate endDate;
     private TripStatus status;
+    private TripVisibility visibility;
 
     // 상세 조회 시 JOIN 결과를 담기 위한 필드
     @Builder.Default

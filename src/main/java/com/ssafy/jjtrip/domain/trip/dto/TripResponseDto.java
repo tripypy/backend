@@ -2,6 +2,7 @@ package com.ssafy.jjtrip.domain.trip.dto;
 
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
+import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
 
 import java.time.LocalDate;
 
@@ -10,7 +11,8 @@ public record TripResponseDto(
     String title,
     LocalDate startDate,
     LocalDate endDate,
-    TripStatus status
+    TripStatus status,
+    TripVisibility visibility
 ) {
     public static TripResponseDto from(Trip entity) {
         return new TripResponseDto(
@@ -18,7 +20,8 @@ public record TripResponseDto(
                 entity.getTitle(),
                 entity.getStartDate(),
                 entity.getEndDate(),
-                entity.getStatus()
+                entity.getStatus(),
+                entity.getVisibility()
         );
     }
 }
