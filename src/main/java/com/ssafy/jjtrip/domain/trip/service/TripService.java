@@ -1,0 +1,83 @@
+package com.ssafy.jjtrip.domain.trip.service;
+
+import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
+import com.ssafy.jjtrip.domain.trip.entity.Trip;
+import com.ssafy.jjtrip.domain.trip.entity.TripItem;
+import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
+import com.ssafy.jjtrip.domain.trip.exception.TripErrorCode;
+import com.ssafy.jjtrip.domain.trip.exception.TripException;
+import com.ssafy.jjtrip.domain.trip.mapper.TripMapper;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class TripService {
+
+    private final TripMapper tripMapper;
+
+    @Transactional
+    public Trip createTrip(Long userId) {
+        Trip newTrip = Trip.builder()
+                .userId(userId)
+                .title("임시 여행") // 기본 제목
+                .status(TripStatus.DRAFT) // 기본 상태
+                .build();
+        tripMapper.insert(newTrip);
+        return newTrip;
+    }
+
+    public List<Trip> findMyTrips(Long userId, TripStatus status) {
+        if (status == null) {
+            return tripMapper.selectByUserId(userId);
+        } else {
+            return tripMapper.selectByUserIdAndStatus(userId, status);
+        }
+    }
+
+    public Trip getTripDetail(Long tripId, Long userId) {
+        Trip trip = findTripById(tripId);
+
+        if (trip.getStatus() != TripStatus.PUBLIC && !trip.getUserId().equals(userId)) {
+            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
+        }
+
+        List<TripItem> tripItems = tripMapper.selectItemsByTripId(tripId);
+        trip.setTripItems(tripItems);
+        return trip;
+    }
+
+    @Transactional
+    public void updateTrip(Long tripId, TripUpdateRequestDto requestDto, Long userId) {
+        Trip trip = findTripById(tripId);
+
+        if (!trip.getUserId().equals(userId)) {
+            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
+        }
+
+        trip.setTitle(requestDto.title());
+        trip.setStartDate(requestDto.startDate());
+        trip.setEndDate(requestDto.endDate());
+        trip.setStatus(requestDto.status());
+        tripMapper.update(trip);
+    }
+
+    @Transactional
+    public void deleteTrip(Long tripId, Long userId) {
+        Trip trip = findTripById(tripId);
+
+        if (!trip.getUserId().equals(userId)) {
+            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
+        }
+        
+        tripMapper.delete(tripId);
+    }
+
+    private Trip findTripById(Long tripId) {
+        return tripMapper.selectById(tripId)
+                .orElseThrow(() -> new TripException(TripErrorCode.TRIP_NOT_FOUND));
+    }
+}
