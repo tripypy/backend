@@ -43,7 +43,7 @@ backups/
 .env
 
 ### MySQL ###
-*.sql
+#*.sql
 *.sqlite
 *.db
 
