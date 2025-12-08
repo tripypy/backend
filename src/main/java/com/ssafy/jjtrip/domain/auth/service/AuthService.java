@@ -1,10 +1,8 @@
 package com.ssafy.jjtrip.domain.auth.service;
 
-import com.ssafy.jjtrip.common.mail.EmailService;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.common.security.JwtTokenProvider;
 import com.ssafy.jjtrip.common.util.RedisUtil;
-import com.ssafy.jjtrip.common.util.EmailMasker;
 import com.ssafy.jjtrip.domain.auth.dto.SignupRequestDto;
 import com.ssafy.jjtrip.domain.auth.dto.TokenInfo;
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
@@ -13,7 +11,6 @@ import com.ssafy.jjtrip.domain.user.entity.Role;
 import com.ssafy.jjtrip.domain.user.entity.User;
 import com.ssafy.jjtrip.domain.user.entity.UserStatus;
 import com.ssafy.jjtrip.domain.user.mapper.UserMapper;
-import java.security.SecureRandom;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,7 +36,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final RedisUtil redisUtil;
-    private final EmailService emailService;
 
     @Value("${app.jwt.refresh-token-expire-time}")
     private long refreshTokenExpireTimeMs;
@@ -78,22 +74,6 @@ public class AuthService {
         validateDuplicateNickname(signupRequestDto.nickname());
         User user = buildNewUser(signupRequestDto);
         userMapper.save(user);
-    }
-
-    @Transactional
-    public void resetPassword(String email) {
-        userMapper.findByEmail(email).ifPresent(user -> {
-            String temporaryPassword = generateTemporaryPassword();
-            String encodedPassword = passwordEncoder.encode(temporaryPassword);
-            userMapper.updatePasswordHash(user.getId(), encodedPassword);
-            emailService.sendNewPasswordEmail(user.getEmail(), temporaryPassword);
-        });
-    }
-
-    public String findEmailByNickname(String nickname) {
-        User user = userMapper.findByNickname(nickname)
-                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
-        return EmailMasker.maskEmail(user.getEmail());
     }
 
     @Transactional
@@ -156,15 +136,5 @@ public class AuthService {
                 .role(Role.USER)
                 .status(UserStatus.ACTIVE)
                 .build();
-    }
-
-    private String generateTemporaryPassword() {
-        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
     }
 }
