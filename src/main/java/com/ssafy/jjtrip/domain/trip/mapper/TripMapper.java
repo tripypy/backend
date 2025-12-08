@@ -131,4 +131,10 @@ public interface TripMapper {
             "</script>"
     })
     void parkTripItems(@Param("ids") List<Long> ids);
+
+    @Select("SELECT COUNT(id) FROM trip_item WHERE trip_id = #{tripId}")
+    int countTripItemsByTripId(Long tripId);
+
+    @Select("SELECT s.name FROM trip_item ti JOIN spot s ON ti.spot_id = s.id WHERE ti.trip_id = #{tripId} ORDER BY ti.day_number, ti.order_index LIMIT 3")
+    List<String> selectSpotPreviewNamesByTripId(Long tripId);
 }
