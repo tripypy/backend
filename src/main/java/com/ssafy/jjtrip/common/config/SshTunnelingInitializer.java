@@ -53,10 +53,10 @@ public class SshTunnelingInitializer {
 
         // 로컬 포트 포워딩 설정
         // L: local port, R: remote host, R: remote port
-        // 로컬 13306 포트를 원격 서버의 3306 포트로 포워딩합니다.
-        int localPort = 13306; 
-        String remoteHost = "127.0.0.1";
-        int remotePort = 3306;
+        // 로컬 포트를 원격 서버의 원격 포트로 포워딩합니다.
+        int localPort = properties.getLocalPort();
+        String remoteHost = properties.getRemoteHost();
+        int remotePort = properties.getRemotePort();
         session.setPortForwardingL(localPort, remoteHost, remotePort);
         LOGGER.info("SSH tunnel established: localhost:{} -> {}:{}", localPort, remoteHost, remotePort);
     }
