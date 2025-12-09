@@ -26,4 +26,5 @@ public class UserAndProfileDto {
     private Long travelStyleId;
     private String profileBannerUrl;
     private Boolean isProfilePublic;
+    private int friendsCount;
 }

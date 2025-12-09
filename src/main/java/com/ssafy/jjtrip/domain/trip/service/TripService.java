@@ -33,6 +33,7 @@ public class TripService {
                 .visibility(TripVisibility.PRIVATE) // 기본 공개 여부
                 .build();
         tripMapper.insert(newTrip);
+        newTrip.setTripItems(new java.util.ArrayList<>()); // Initialize tripItems to prevent NPE
         return newTrip;
     }
 

@@ -53,6 +53,7 @@ CREATE TABLE `user_profile` (
   `travel_style_id`         BIGINT,
   `profile_banner_url`      VARCHAR(255),
   `is_profile_public`       BOOLEAN NOT NULL DEFAULT TRUE,
+  `friends_count`           INT NOT NULL DEFAULT 0, -- Added friends_count column
   `created_at`              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`),
@@ -146,12 +147,12 @@ CREATE TABLE `trip` (
   `title`          VARCHAR(100) NOT NULL,
   `start_date`     DATE,
   `end_date`       DATE,
-  `visibility`     VARCHAR(20) NOT NULL DEFAULT 'PRIVATE', -- 'PUBLIC' 또는 'PRIVATE'
-  `created_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `visibility`     VARCHAR(20) NOT NULL DEFAULT 'PRIVATE' COMMENT "'PUBLIC' 또는 'PRIVATE'",
+  `created_at`     DATETIME DEFAULT NOW(),
+  `updated_at`     DATETIME,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_trip_user`        FOREIGN KEY (`user_id`)        REFERENCES `user` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_trip_trip_status` FOREIGN KEY (`trip_status_id`) REFERENCES `trip_status` (`id`)
+  CONSTRAINT `fk_trip_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_trip_status` FOREIGN KEY (`trip_status_id`) REFERENCES `trip_status` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 여행 상세 아이템 (Trip Item)
@@ -204,13 +205,32 @@ INSERT INTO `badge` (id, code, name, description, icon_url, category, level) VAL
 (2, 'PHOTO_MASTER', '사진 장인', '사진 100장 업로드', NULL, 'PHOTO', 2);
 
 -- 더미 사용자 (사용자 제공 계정)
-INSERT INTO `user` (id, role_id, status_id, email, password_hash, nickname, profile_image_url) VALUES
-(1, 1, 1, 'hi@hi.hi', '$2a$10$uyMhCnceQ3ORnCNk.wvfOeZt3EqtJNKzlD0OYZ.veOJYa2SgPFszu', '테스트 계정1', NULL),
-(2, 1, 1, 'hi1@hi.hi', '$2a$10$uB2MdvuEvR460eGyC/H8w.j3ghCsBzLFRN7FOXpbG0vjCTx6o9n2K', '테스트 계정2', NULL),
-(3, 1, 1, 'hi2@hi.hi', '$2a$10$1cA1Jc5KIeCCfBGAPKBbH.pt5dDiSKTgRX/j8aixQa1Pk8xB2Dreq', '테스트 계정3', NULL);
+INSERT INTO `user` (id, role_id, status_id, email, password_hash, nickname) VALUES
+(1, 1, 1, 'hi@hi.hi', '$2a$10$uyMhCnceQ3ORnCNk.wvfOeZt3EqtJNKzlD0OYZ.veOJYa2SgPFszu', '테스트 계정1'),
+(2, 1, 1, 'hi1@hi.hi', '$2a$10$uB2MdvuEvR460eGyC/H8w.j3ghCsBzLFRN7FOXpbG0vjCTx6o9n2K', '테스트 계정2'),
+(3, 1, 1, 'hi2@hi.hi', '$2a$10$1cA1Jc5KIeCCfBGAPKBbH.pt5dDiSKTgRX/j8aixQa1Pk8xB2Dreq', '테스트 계정3');
 
 -- 더미 사용자 프로필 (사용자 제공 계정)
-INSERT INTO `user_profile` (user_id, bio, intro, home_region_id, travel_style_summary, travel_style_id, profile_banner_url, is_profile_public) VALUES
-(1, '안녕하세요! 테스트 계정1입니다.', NULL, NULL, NULL, NULL, NULL, TRUE),
-(2, '안녕하세요! 테스트 계정2입니다.', NULL, NULL, NULL, NULL, NULL, TRUE),
-(3, '안녕하세요! 테스트 계정3입니다.', NULL, NULL, NULL, NULL, NULL, TRUE);
+INSERT INTO `user_profile` (user_id, bio, intro, friends_count) VALUES
+(1, '안녕하세요! 테스트 계정1입니다.', '테스트 계정 1의 자기소개', 2),
+(2, '안녕하세요! 테스트 계정2입니다.', '테스트 계정 2의 자기소개', 2),
+(3, '안녕하세요! 테스트 계정3입니다.', '테스트 계정 3의 자기소개', 2);
+
+-- 더미 친구 관계
+INSERT INTO `friendship` (user_id_a, user_id_b) VALUES (1, 2);
+INSERT INTO `friendship` (user_id_a, user_id_b) VALUES (1, 3);
+INSERT INTO `friendship` (user_id_a, user_id_b) VALUES (2, 3);
+INSERT INTO `spot` (kakao_place_id, name, address, category, lat, lng, place_url) VALUES
+('27392064', '아쿠아플라넷 제주', '제주 서귀포시 성산읍 섭지코지로 95', '테마파크', 33.43041, 126.9242, 'http://place.map.kakao.com/27392064'),
+('8035229', '성산일출봉', '제주 서귀포시 성산읍 성산리 1', '명소', 33.45806, 126.9425, 'http://place.map.kakao.com/8035229'),
+('7948366', '카멜리아힐', '제주 서귀포시 안덕면 병악로 166', '공원', 33.2989, 126.3939, 'http://place.map.kakao.com/7948366');
+
+-- 더미 여행 계획
+INSERT INTO `trip` (user_id, trip_status_id, title, start_date, end_date, visibility) VALUES
+(1, 2, '제주도 2박 3일 여행', '2024-03-10', '2024-03-12', 'PUBLIC');
+
+-- 더미 여행 아이템
+INSERT INTO `trip_item` (trip_id, spot_id, day_number, order_index, memo) VALUES
+(1, 1, 1, 1, '오전 10시 도착 예정'),
+(1, 2, 2, 1, '일출 보러 가기'),
+(1, 3, 2, 2, '점심 먹고 산책');
