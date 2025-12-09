@@ -2,14 +2,14 @@ package com.ssafy.jjtrip.domain.user.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter; // Added for deserialization if needed in some contexts
+import lombok.Setter;
 
 @Getter
 @Setter
 @Builder
-public class UserProfileResponseDto {
+public class PublicUserProfileResponseDto {
     private Long id;
-    private String email;
+    // No email
     private String nickname;
     private String profileImageUrl;
     private String bio;
@@ -19,12 +19,11 @@ public class UserProfileResponseDto {
     private Long travelStyleId;
     private String profileBannerUrl;
     private Boolean isProfilePublic;
-    private int friendsCount; // Added friendsCount
+    private int friendsCount;
 
-    public static UserProfileResponseDto from(UserAndProfileDto userAndProfile) {
-        return UserProfileResponseDto.builder()
+    public static PublicUserProfileResponseDto from(UserAndProfileDto userAndProfile) {
+        return PublicUserProfileResponseDto.builder()
                 .id(userAndProfile.getId())
-                .email(userAndProfile.getEmail())
                 .nickname(userAndProfile.getNickname())
                 .profileImageUrl(userAndProfile.getProfileImageUrl())
                 .bio(userAndProfile.getBio())
@@ -34,7 +33,7 @@ public class UserProfileResponseDto {
                 .travelStyleId(userAndProfile.getTravelStyleId())
                 .profileBannerUrl(userAndProfile.getProfileBannerUrl())
                 .isProfilePublic(userAndProfile.getIsProfilePublic())
-                .friendsCount(userAndProfile.getFriendsCount()) // Map friendsCount
+                .friendsCount(userAndProfile.getFriendsCount())
                 .build();
     }
 }

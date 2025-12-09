@@ -63,7 +63,7 @@ public interface TripMapper {
     List<TripItem> selectItemsByTripId(Long tripId);
 
     @Select("SELECT " +
-            "ti.id, ti.trip_id, ti.spot_id, ti.day_number, ti.order_index, ti.memo, ti.created_at, " +
+            "ti.id, ti.trip_id, ti.spot_id, ti.day_number, ti.order_index, ti.memo, " +
             "s.id as s_id, s.kakao_place_id as s_kakao_place_id, s.name as s_name, s.address as s_address, s.category as s_category, " +
             "s.lat as s_lat, s.lng as s_lng, s.place_url as s_place_url, s.thumbnail_url as s_thumbnail_url " +
             "FROM trip_item ti " +

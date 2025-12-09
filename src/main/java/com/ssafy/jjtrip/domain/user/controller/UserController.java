@@ -4,6 +4,7 @@ import com.ssafy.jjtrip.common.s3.exception.FileErrorCode;
 import com.ssafy.jjtrip.common.s3.exception.FileException;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.user.dto.request.UpdateUserRequestDto;
+import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.ProfileImageUpdateResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.service.UserService;
@@ -29,8 +30,8 @@ public class UserController {
     }
     
     @GetMapping("/{userId}/profile")
-    public ResponseEntity<UserProfileResponseDto> getUserProfile(@PathVariable("userId") Long userId) {
-        UserProfileResponseDto user = userService.getUserProfile(userId);
+    public ResponseEntity<PublicUserProfileResponseDto> getUserProfile(@PathVariable("userId") Long userId) {
+        PublicUserProfileResponseDto user = userService.getPublicUserProfile(userId);
         return ResponseEntity.ok(user);
     }
 
@@ -40,9 +41,9 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
     
-    @GetMapping("/me/friends")
-    public ResponseEntity<List<UserProfileResponseDto>> getMyFriends(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<UserProfileResponseDto> friends = userService.getFriendsList(userDetails.getUser().getId());
+    @GetMapping("/{userId}/friends")
+    public ResponseEntity<List<PublicUserProfileResponseDto>> getUserFriends(@PathVariable("userId") Long userId) {
+        List<PublicUserProfileResponseDto> friends = userService.getFriendsList(userId);
         return ResponseEntity.ok(friends);
     }
 
