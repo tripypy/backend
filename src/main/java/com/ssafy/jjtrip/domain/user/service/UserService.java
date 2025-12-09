@@ -6,6 +6,7 @@ import com.ssafy.jjtrip.common.util.EmailMasker;
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
 import com.ssafy.jjtrip.domain.auth.exception.AuthException;
 import com.ssafy.jjtrip.domain.user.dto.request.UpdateUserRequestDto;
+import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserAndProfileDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.entity.User;
@@ -38,10 +39,17 @@ public class UserService {
         return mapToUserProfileResponseDto(userAndProfile);
     }
     
-    public List<UserProfileResponseDto> getFriendsList(Long userId) {
+    public PublicUserProfileResponseDto getPublicUserProfile(Long userId) {
+        UserAndProfileDto userAndProfile = userMapper.findUserAndProfileById(userId)
+                .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+
+        return PublicUserProfileResponseDto.from(userAndProfile);
+    }
+
+    public List<PublicUserProfileResponseDto> getFriendsList(Long userId) {
         List<UserAndProfileDto> friends = userMapper.findFriendsByUserId(userId);
         return friends.stream()
-                .map(this::mapToUserProfileResponseDto)
+                .map(PublicUserProfileResponseDto::from)
                 .collect(Collectors.toList());
     }
 
@@ -117,6 +125,7 @@ public class UserService {
                 .travelStyleId(userAndProfile.getTravelStyleId())
                 .profileBannerUrl(userAndProfile.getProfileBannerUrl())
                 .isProfilePublic(userAndProfile.getIsProfilePublic())
+                .friendsCount(userAndProfile.getFriendsCount()) // Pass friendsCount
                 .build();
     }
     

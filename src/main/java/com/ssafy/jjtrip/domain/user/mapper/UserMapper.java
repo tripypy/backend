@@ -82,7 +82,7 @@ public interface UserMapper {
 
     @Select("SELECT " +
             "u.id, u.role_id, u.status_id, u.email, u.nickname, u.profile_image_url, " +
-            "up.bio, up.intro, up.home_region_id, up.travel_style_summary, up.travel_style_id, up.profile_banner_url, up.is_profile_public " +
+            "up.bio, up.intro, up.home_region_id, up.travel_style_summary, up.travel_style_id, up.profile_banner_url, up.is_profile_public, up.friends_count " +
             "FROM user u " +
             "LEFT JOIN user_profile up ON u.id = up.user_id " +
             "WHERE u.id = #{userId}")
@@ -99,13 +99,14 @@ public interface UserMapper {
             @Result(property = "travelStyleSummary", column = "travel_style_summary"),
             @Result(property = "travelStyleId", column = "travel_style_id"),
             @Result(property = "profileBannerUrl", column = "profile_banner_url"),
-            @Result(property = "isProfilePublic", column = "is_profile_public")
+            @Result(property = "isProfilePublic", column = "is_profile_public"),
+            @Result(property = "friendsCount", column = "friends_count")
     })
     Optional<UserAndProfileDto> findUserAndProfileById(@Param("userId") Long userId);
 
     @Select("SELECT " +
             "f.id, f.role_id, f.status_id, f.email, f.nickname, f.profile_image_url, " +
-            "fp.bio, fp.intro, fp.home_region_id, fp.travel_style_summary, fp.travel_style_id, fp.profile_banner_url, fp.is_profile_public " +
+            "fp.bio, fp.intro, fp.home_region_id, fp.travel_style_summary, fp.travel_style_id, fp.profile_banner_url, fp.is_profile_public, fp.friends_count " +
             "FROM friendship fs " +
             "JOIN user f ON (fs.user_id_a = f.id OR fs.user_id_b = f.id) AND f.id != #{userId} " +
             "LEFT JOIN user_profile fp ON f.id = fp.user_id " +
@@ -123,7 +124,8 @@ public interface UserMapper {
             @Result(property = "travelStyleSummary", column = "travel_style_summary"),
             @Result(property = "travelStyleId", column = "travel_style_id"),
             @Result(property = "profileBannerUrl", column = "profile_banner_url"),
-            @Result(property = "isProfilePublic", column = "is_profile_public")
+            @Result(property = "isProfilePublic", column = "is_profile_public"),
+            @Result(property = "friendsCount", column = "friends_count")
     })
     List<UserAndProfileDto> findFriendsByUserId(@Param("userId") Long userId);
 }
