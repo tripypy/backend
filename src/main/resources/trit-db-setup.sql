@@ -71,39 +71,6 @@ CREATE TABLE `friendship` (
   CONSTRAINT `chk_friendship_order` CHECK (`user_id_a` < `user_id_b`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 여행 스타일 (Travel Style)
-CREATE TABLE `travel_style` (
-  `id`   BIGINT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(20) NOT NULL UNIQUE, -- 'CAFE_LOVER'
-  `name` VARCHAR(50) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 배지 (Badge)
-CREATE TABLE `badge` (
-  `id`          BIGINT NOT NULL AUTO_INCREMENT,
-  `code`        VARCHAR(50) NOT NULL UNIQUE,
-  `name`        VARCHAR(100) NOT NULL,
-  `description` VARCHAR(255),
-  `icon_url`    VARCHAR(255),
-  `category`    VARCHAR(30),
-  `level`       INT,
-  `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 사용자 배지 (User Badge)
-CREATE TABLE `user_badge` (
-  `user_id`     BIGINT NOT NULL,
-  `badge_id`    BIGINT NOT NULL,
-  `obtained_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `is_pinned`   BOOLEAN NOT NULL DEFAULT FALSE,
-  PRIMARY KEY (`user_id`, `badge_id`),
-  CONSTRAINT `fk_user_badge_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_user_badge_badge` FOREIGN KEY (`badge_id`) REFERENCES `badge` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- ==========================================
 -- 🏢 2. 장소 (Spot Domain)
 -- ==========================================
@@ -173,6 +140,64 @@ CREATE TABLE `trip_item` (
   CONSTRAINT `fk_item_spot` FOREIGN KEY (`spot_id`) REFERENCES `spot` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+-- ==========================================
+-- ✍️ 4. 여행 기록 (Trip Log Domain)
+-- ==========================================
+
+-- 여행 기록 (Trip Log)
+CREATE TABLE `trip_log` (
+  `id`               BIGINT NOT NULL AUTO_INCREMENT,
+  `trip_id`          BIGINT NOT NULL,
+  `title`            VARCHAR(255) NOT NULL,
+  `content`          TEXT COMMENT '마크다운 형식 본문. 이미지는 {{img_key}} 형태의 참조 키 사용',
+  `location_summary` VARCHAR(255) COMMENT '장소 요약 (예: 서울시 or 서울시 강남구 or 서울시 강남구 역삼동)',
+  `like_count`       INT NOT NULL DEFAULT 0 COMMENT '좋아요 수',
+  `comment_count`    INT NOT NULL DEFAULT 0 COMMENT '댓글 수',
+  `created_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_trip_log_trip_id` (`trip_id`), -- trip과 1:1 관계를 위해 UNIQUE 제약조건 추가
+  CONSTRAINT `fk_trip_log_trip` FOREIGN KEY (`trip_id`) REFERENCES `trip` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 여행 기록 좋아요 (Log Like)
+CREATE TABLE `log_like` (
+    `user_id`    BIGINT NOT NULL,
+    `log_id`     BIGINT NOT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_id`, `log_id`), -- 한 사용자가 한 게시물에 좋아요를 한 번만 누를 수 있도록 복합키 설정
+    CONSTRAINT `fk_log_like_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_log_like_log` FOREIGN KEY (`log_id`) REFERENCES `trip_log` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 여행 기록 이미지 (Log Image)
+CREATE TABLE `log_image` (
+    `id`            BIGINT NOT NULL AUTO_INCREMENT,
+    `log_id`        BIGINT, -- 로그 저장 전 임시 업로드 상태일 수 있으므로 NULL 허용
+    `user_id`       BIGINT NOT NULL,
+    `image_url`     VARCHAR(255) NOT NULL,
+    `order_index`   INT NOT NULL COMMENT '인스타 피드 뷰에서의 표시 순서',
+    `image_ref_key` VARCHAR(50) NOT NULL COMMENT '본문 {{key}}와 매핑되는 고유 키 (프론트 생성)',
+    `created_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_log_image_log` FOREIGN KEY (`log_id`) REFERENCES `trip_log` (`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_log_image_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 여행 기록 댓글 (Log Comment)
+CREATE TABLE `log_comment` (
+  `id`          BIGINT NOT NULL AUTO_INCREMENT,
+  `log_id`      BIGINT NOT NULL,
+  `user_id`     BIGINT NOT NULL,
+  `content`     TEXT NOT NULL,
+  `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_comment_log` FOREIGN KEY (`log_id`) REFERENCES `trip_log` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_comment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- =================================================================
 -- 8. 시드 데이터 (초기 데이터)
 -- =================================================================
@@ -193,22 +218,11 @@ INSERT INTO `trip_status` (id, code, name, description) VALUES
 (2, 'PLANNED',   '계획 완료', '여행 계획 완료 상태'),
 (3, 'COMPLETED', '여행 완료', '여행이 실제로 완료된 상태');
 
--- 여행 스타일 (최소 데이터)
-INSERT INTO `travel_style` (id, code, name) VALUES
-(1, 'CAFE_HOPPER', '카페 탐방가'),
-(2, 'ADVENTURER', '모험가'),
-(3, 'FOODIE', '미식가');
-
--- 배지 (최소 데이터)
-INSERT INTO `badge` (id, code, name, description, icon_url, category, level) VALUES
-(1, 'FIRST_TRIP', '첫 여행', '첫 여행 계획 완료', NULL, 'TRIP', 1),
-(2, 'PHOTO_MASTER', '사진 장인', '사진 100장 업로드', NULL, 'PHOTO', 2);
-
 -- 더미 사용자 (사용자 제공 계정)
-INSERT INTO `user` (id, role_id, status_id, email, password_hash, nickname) VALUES
-(1, 1, 1, 'hi@hi.hi', '$2a$10$uyMhCnceQ3ORnCNk.wvfOeZt3EqtJNKzlD0OYZ.veOJYa2SgPFszu', '테스트 계정1'),
-(2, 1, 1, 'hi1@hi.hi', '$2a$10$uB2MdvuEvR460eGyC/H8w.j3ghCsBzLFRN7FOXpbG0vjCTx6o9n2K', '테스트 계정2'),
-(3, 1, 1, 'hi2@hi.hi', '$2a$10$1cA1Jc5KIeCCfBGAPKBbH.pt5dDiSKTgRX/j8aixQa1Pk8xB2Dreq', '테스트 계정3');
+INSERT INTO `user` (id, role_id, status_id, email, password_hash, nickname, profile_image_url) VALUES
+(1, 1, 1, 'hi@hi.hi', '$2a$10$uyMhCnceQ3ORnCNk.wvfOeZt3EqtJNKzlD0OYZ.veOJYa2SgPFszu', '테스트 계정1', 'https://dh.aks.ac.kr/Edu/wiki/images/b/b7/%ED%95%91%EA%B5%AC.jpg'),
+(2, 1, 1, 'hi1@hi.hi', '$2a$10$uB2MdvuEvR460eGyC/H8w.j3ghCsBzLFRN7FOXpbG0vjCTx6o9n2K', '테스트 계정2', 'https://i.namu.wiki/i/w4Vkm_EuVM_FV8-VDjLVJPWazkrT1YnkSFLVASCh4YM8QUebla94cM8j42z8hQPzJQCyVcDlm71EeKgPzLyMfg.webp'),
+(3, 1, 1, 'hi2@hi.hi', '$2a$10$1cA1Jc5KIeCCfBGAPKBbH.pt5dDiSKTgRX/j8aixQa1Pk8xB2Dreq', '테스트 계정3', 'https://i.namu.wiki/i/2Vk0cSYgfHODE4-SrICeOk7qaQCz09wqivf27QgdZawQ5lg3YKo-XjL9BvyvkBeQ-JGE_dV83cYnsd5urD65aw.webp');
 
 -- 더미 사용자 프로필 (사용자 제공 계정)
 INSERT INTO `user_profile` (user_id, bio, intro, friends_count) VALUES
@@ -220,17 +234,43 @@ INSERT INTO `user_profile` (user_id, bio, intro, friends_count) VALUES
 INSERT INTO `friendship` (user_id_a, user_id_b) VALUES (1, 2);
 INSERT INTO `friendship` (user_id_a, user_id_b) VALUES (1, 3);
 INSERT INTO `friendship` (user_id_a, user_id_b) VALUES (2, 3);
+
+-- 더미 장소
 INSERT INTO `spot` (kakao_place_id, name, address, category, lat, lng, place_url) VALUES
 ('27392064', '아쿠아플라넷 제주', '제주 서귀포시 성산읍 섭지코지로 95', '테마파크', 33.43041, 126.9242, 'http://place.map.kakao.com/27392064'),
 ('8035229', '성산일출봉', '제주 서귀포시 성산읍 성산리 1', '명소', 33.45806, 126.9425, 'http://place.map.kakao.com/8035229'),
 ('7948366', '카멜리아힐', '제주 서귀포시 안덕면 병악로 166', '공원', 33.2989, 126.3939, 'http://place.map.kakao.com/7948366');
 
 -- 더미 여행 계획
-INSERT INTO `trip` (user_id, trip_status_id, title, start_date, end_date, visibility) VALUES
-(1, 2, '제주도 2박 3일 여행', '2024-03-10', '2024-03-12', 'PUBLIC');
+INSERT INTO `trip` (id, user_id, trip_status_id, title, start_date, end_date, visibility) VALUES
+(1, 1, 2, '제주도 2박 3일 여행', '2024-03-10', '2024-03-12', 'PUBLIC');
 
 -- 더미 여행 아이템
 INSERT INTO `trip_item` (trip_id, spot_id, day_number, order_index, memo) VALUES
 (1, 1, 1, 1, '오전 10시 도착 예정'),
 (1, 2, 2, 1, '일출 보러 가기'),
 (1, 3, 2, 2, '점심 먹고 산책');
+
+-- 더미 여행 로그 (이미지 플레이스홀더 적용: 고유 키 방식)
+-- {{img_a1b2}} 처럼 프론트가 생성한 고유 키를 사용
+INSERT INTO `trip_log` (id, trip_id, title, content, location_summary, like_count, comment_count) VALUES
+(1, 1, '제주도 2박 3일 여행기',
+'이번 제주도 여행의 시작은 아쿠아플라넷이었습니다.\n\n{{img_key_1}}\n\n수족관 규모가 정말 커서 놀랐어요. 상어도 보고 가오리도 봤네요.\n그 다음날 아침에는 일출을 보러 갔습니다.\n\n{{img_key_2}}\n\n날씨가 좋아서 해 뜨는 게 아주 잘 보였습니다. 정말 잊지 못할 추억이에요.',
+'제주 서귀포시', 0, 0);
+
+-- 더미 여행 기록 이미지 (image_ref_key 포함)
+-- order_index: 피드 뷰 정렬용
+-- image_ref_key: 블로그 뷰 본문 매핑용
+INSERT INTO `log_image` (log_id, user_id, image_url, order_index, image_ref_key) VALUES
+(1, 1, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvytJIR9t4OyaATlDacK5xwsF7rd3yiMgWGQ&s', 0, 'img_key_1'),
+(1, 1, 'https://img1.daumcdn.net/thumb/R1280x0.fjpg/?fname=http://t1.daumcdn.net/brunch/service/user/1lcG/image/ATFUCOF_RrI4V7UWgZCF_g139sY.jpg', 1, 'img_key_2');
+
+-- 더미 로그 댓글
+INSERT INTO `log_comment` (log_id, user_id, content) VALUES
+(1, 2, '와 여행 너무 좋아보여요! 사진 멋지네요.'),
+(1, 3, '다음엔 저도 같이 가요 ㅎㅎ');
+
+-- 더미 로그 좋아요
+INSERT INTO `log_like` (user_id, log_id) VALUES
+(2, 1),
+(3, 1);
