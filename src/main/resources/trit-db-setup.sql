@@ -1,18 +1,18 @@
 -- =================================================================
--- 데이터베이스 설정 (2차 설계 통합)
+-- 데이터베이스 설정
 -- =================================================================
-DROP DATABASE IF EXISTS jjtrip_dev;
-CREATE DATABASE jjtrip_dev DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE jjtrip_dev;
+DROP DATABASE IF EXISTS trit_dev;
+CREATE DATABASE trit_dev DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE trit_dev;
 
 -- =================================================================
--- 1. 유저 및 권한 (User & Auth)
+-- 1. 사용자 및 권한
 -- =================================================================
 
 -- 역할 (Role)
 CREATE TABLE `role` (
   `id`   BIGINT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(20) NOT NULL UNIQUE COMMENT "'USER', 'ADMIN'",
+  `code` VARCHAR(20) NOT NULL UNIQUE, -- 'USER', 'ADMIN'
   `name` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -20,7 +20,7 @@ CREATE TABLE `role` (
 -- 사용자 상태 (User Status)
 CREATE TABLE `user_status` (
   `id`          BIGINT NOT NULL AUTO_INCREMENT,
-  `code`        VARCHAR(20) NOT NULL UNIQUE COMMENT "'ACTIVE', 'DELETED'",
+  `code`        VARCHAR(20) NOT NULL UNIQUE, -- 'ACTIVE', 'DELETED'
   `name`        VARCHAR(50) NOT NULL,
   `description` VARCHAR(100),
   PRIMARY KEY (`id`)
@@ -31,18 +31,19 @@ CREATE TABLE `user` (
   `id`                BIGINT NOT NULL AUTO_INCREMENT,
   `role_id`           BIGINT NOT NULL,
   `status_id`         BIGINT NOT NULL,
-  `email`             VARCHAR(100) UNIQUE,
-  `password_hash`     VARCHAR(255),
-  `nickname`          VARCHAR(50),
+  `email`             VARCHAR(100) NOT NULL UNIQUE,
+  `password_hash`     VARCHAR(255) NOT NULL,
+  `nickname`          VARCHAR(50) NOT NULL,
   `profile_image_url` VARCHAR(255),
-  `created_at`        DATETIME DEFAULT NOW(),
-  `updated_at`        DATETIME,
+  `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  KEY `idx_user_email` (`email`),
   CONSTRAINT `fk_user_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`),
   CONSTRAINT `fk_user_status` FOREIGN KEY (`status_id`) REFERENCES `user_status` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 사용자 프로필 (User Profile) - 기존 테이블 유지
+-- 사용자 프로필 (User Profile)
 CREATE TABLE `user_profile` (
   `user_id`                 BIGINT NOT NULL,
   `bio`                     VARCHAR(255),
@@ -59,7 +60,7 @@ CREATE TABLE `user_profile` (
   CONSTRAINT `fk_user_profile_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 친구 관계 (Friendship) - 기존 테이블 유지
+-- 친구 관계 (Friendship)
 CREATE TABLE `friendship` (
   `user_id_a`  BIGINT NOT NULL,
   `user_id_b`  BIGINT NOT NULL,
@@ -70,40 +71,75 @@ CREATE TABLE `friendship` (
   CONSTRAINT `chk_friendship_order` CHECK (`user_id_a` < `user_id_b`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- =================================================================
--- 2. 장소 (Spot) - 2차 설계 반영
--- =================================================================
-
-CREATE TABLE `spot` (
-  `id`             BIGINT NOT NULL AUTO_INCREMENT,
-  `kakao_place_id` VARCHAR(50) UNIQUE NOT NULL COMMENT "카카오맵 고유 ID",
-  `name`           VARCHAR(100) NOT NULL,
-  `address`        VARCHAR(255),
-  `category`       VARCHAR(50),
-  `lat`            DECIMAL(10,8) NOT NULL,
-  `lng`            DECIMAL(11,8) NOT NULL,
-  `place_url`      VARCHAR(255),
-  `thumbnail_url`  VARCHAR(255),
-  `review_count`   INT DEFAULT 0,
-  `average_rating` DECIMAL(3,2) DEFAULT 0,
-  `created_at`     DATETIME DEFAULT NOW(),
+-- 여행 스타일 (Travel Style)
+CREATE TABLE `travel_style` (
+  `id`   BIGINT NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(20) NOT NULL UNIQUE, -- 'CAFE_LOVER'
+  `name` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- =================================================================
--- 3. 여행 계획 (Trip Plan) - 2차 설계 반영
--- =================================================================
+-- 배지 (Badge)
+CREATE TABLE `badge` (
+  `id`          BIGINT NOT NULL AUTO_INCREMENT,
+  `code`        VARCHAR(50) NOT NULL UNIQUE,
+  `name`        VARCHAR(100) NOT NULL,
+  `description` VARCHAR(255),
+  `icon_url`    VARCHAR(255),
+  `category`    VARCHAR(30),
+  `level`       INT,
+  `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 여행 상태 마스터
+-- 사용자 배지 (User Badge)
+CREATE TABLE `user_badge` (
+  `user_id`     BIGINT NOT NULL,
+  `badge_id`    BIGINT NOT NULL,
+  `obtained_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_pinned`   BOOLEAN NOT NULL DEFAULT FALSE,
+  PRIMARY KEY (`user_id`, `badge_id`),
+  CONSTRAINT `fk_user_badge_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_badge_badge` FOREIGN KEY (`badge_id`) REFERENCES `badge` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ==========================================
+-- 🏢 2. 장소 (Spot Domain)
+-- ==========================================
+
+-- 장소 (Spot)
+CREATE TABLE `spot` (
+  `id`              BIGINT NOT NULL AUTO_INCREMENT,
+  `kakao_place_id`  VARCHAR(50) NOT NULL,
+  `name`            VARCHAR(100) NOT NULL,
+  `address`         VARCHAR(255),
+  `category`        VARCHAR(50),
+  `lat`             DECIMAL(10, 8) NOT NULL,
+  `lng`             DECIMAL(11, 8) NOT NULL,
+  `place_url`       VARCHAR(255),
+  `thumbnail_url`   VARCHAR(255),
+  `review_count`    INT DEFAULT 0,
+  `average_rating`  DECIMAL(3, 2) DEFAULT 0.0,
+  `created_at`      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_kakao_place_id` (`kakao_place_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ==========================================
+-- ✈️ 3. 여행 계획 (Trip Domain)
+-- ==========================================
+
+-- 여행 상태 마스터 (Trip Status)
 CREATE TABLE `trip_status` (
   `id`          BIGINT NOT NULL AUTO_INCREMENT,
-  `code`        VARCHAR(20) UNIQUE NOT NULL COMMENT "'DRAFT', 'PLANNED', 'COMPLETED'",
-  `name`        VARCHAR(50) NOT NULL COMMENT "작성 중, 계획 완료, 여행 완료",
+  `code`        VARCHAR(20) NOT NULL UNIQUE, -- 'DRAFT', 'PLANNED', 'COMPLETED'
+  `name`        VARCHAR(50) NOT NULL,        -- '작성 중', '계획 완료', '여행 완료'
   `description` VARCHAR(100),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 여행 계획
+-- 여행 (Trip)
 CREATE TABLE `trip` (
   `id`             BIGINT NOT NULL AUTO_INCREMENT,
   `user_id`        BIGINT NOT NULL,
@@ -119,161 +155,54 @@ CREATE TABLE `trip` (
   CONSTRAINT `fk_trip_status` FOREIGN KEY (`trip_status_id`) REFERENCES `trip_status` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 여행 계획 아이템
+-- 여행 상세 아이템 (Trip Item)
 CREATE TABLE `trip_item` (
   `id`          BIGINT NOT NULL AUTO_INCREMENT,
   `trip_id`     BIGINT NOT NULL,
   `spot_id`     BIGINT NOT NULL,
-  `day_number`  INT NOT NULL COMMENT "1일차, 2일차...",
-  `order_index` INT NOT NULL COMMENT "방문 순서",
+  `day_number`  INT NOT NULL,              -- 1일차, 2일차...
+  `order_index` INT NOT NULL,              -- 방문 순서
   `memo`        TEXT,
-  `created_at`  DATETIME DEFAULT NOW(), -- Added created_at column
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_trip_item_trip` FOREIGN KEY (`trip_id`) REFERENCES `trip` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_trip_item_spot` FOREIGN KEY (`spot_id`) REFERENCES `spot` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
--- =================================================================
--- 4. 여행 로그 (Trip Log) - [신규]
--- =================================================================
-
-CREATE TABLE `trip_log` (
-  `id`               BIGINT NOT NULL AUTO_INCREMENT,
-  `user_id`          BIGINT NOT NULL,
-  `original_trip_id` BIGINT COMMENT "어떤 여행 계획을 바탕으로 작성되었는지 (선택)",
-  `title`            VARCHAR(100) NOT NULL,
-  `content`          TEXT NOT NULL,
-  `visibility`       VARCHAR(20) NOT NULL DEFAULT 'PRIVATE' COMMENT "'PUBLIC' 또는 'PRIVATE'",
-  `created_at`       DATETIME DEFAULT NOW(),
-  `updated_at`       DATETIME,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_trip_log_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_trip_log_original_trip` FOREIGN KEY (`original_trip_id`) REFERENCES `trip` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- =================================================================
--- 5. 리뷰 (Review) - [신규]
--- =================================================================
-
-CREATE TABLE `review` (
-  `id`        BIGINT NOT NULL AUTO_INCREMENT,
-  `spot_id`   BIGINT NOT NULL,
-  `user_id`   BIGINT NOT NULL,
-  `content`   TEXT NOT NULL,
-  `rating`    INT NOT NULL COMMENT "1 ~ 5 점",
-  `image_url` VARCHAR(255),
-  `created_at` DATETIME DEFAULT NOW(),
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_review_spot` FOREIGN KEY (`spot_id`) REFERENCES `spot` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- =================================================================
--- 6. 스크랩 (Scrap) - [신규]
--- =================================================================
-
-CREATE TABLE `scrap` (
-  `id`              BIGINT NOT NULL AUTO_INCREMENT,
-  `user_id`         BIGINT NOT NULL COMMENT "스크랩한 유저",
-  `scrappable_id`   BIGINT NOT NULL COMMENT "스크랩된 대상의 ID (spot.id, trip.id, trip_log.id 등)",
-  `scrappable_type` VARCHAR(50) NOT NULL COMMENT "스크랩된 대상의 타입 ('SPOT', 'TRIP', 'TRIP_LOG')",
-  `created_at`      DATETIME DEFAULT NOW(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_scrap` (`user_id`, `scrappable_id`, `scrappable_type`),
-  CONSTRAINT `fk_scrap_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- =================================================================
--- 7. 기존 테이블 유지 (채팅, 저널 등)
--- =================================================================
-
--- 지역 유형 (Region Type) - 기존 테이블 유지
-CREATE TABLE `region_type` (
-  `id`   BIGINT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(20) NOT NULL UNIQUE,
-  `name` VARCHAR(50) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 지역 (Region) - 기존 테이블 유지
-CREATE TABLE `region` (
-  `id`           BIGINT NOT NULL AUTO_INCREMENT,
-  `parent_id`    BIGINT,
-  `type_id`      BIGINT NOT NULL,
-  `name`         VARCHAR(100) NOT NULL,
-  `code`         VARCHAR(50),
-  `slug`         VARCHAR(100),
-  `timezone`     VARCHAR(50),
-  `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_region_parent` FOREIGN KEY (`parent_id`) REFERENCES `region` (`id`),
-  CONSTRAINT `fk_region_type` FOREIGN KEY (`type_id`) REFERENCES `region_type` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 태그 카테고리 (Tag Category) - 기존 테이블 유지
-CREATE TABLE `tag_category` (
-  `id`   BIGINT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(20) NOT NULL UNIQUE,
-  `name` VARCHAR(50) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 태그 (Tag) - 기존 테이블 유지
-CREATE TABLE `tag` (
-  `id`          BIGINT NOT NULL AUTO_INCREMENT,
-  `name`        VARCHAR(50) NOT NULL UNIQUE,
-  `category_id` BIGINT,
   `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_tag_category` FOREIGN KEY (`category_id`) REFERENCES `tag_category` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 채팅방 유형 (Chat Room Type) - 기존 테이블 유지
-CREATE TABLE `chat_room_type` (
-  `id`   BIGINT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(20) NOT NULL UNIQUE,
-  `name` VARCHAR(50) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  INDEX `idx_trip_day_order` (`trip_id`, `day_number`, `order_index`),
+  UNIQUE KEY `uk_trip_day_order` (`trip_id`, `day_number`, `order_index`),
 
--- 채팅방 (Chat Room) - 기존 테이블 유지
-CREATE TABLE `chat_room` (
-  `id`         BIGINT NOT NULL AUTO_INCREMENT,
-  `name`       VARCHAR(100),
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  CONSTRAINT `fk_item_trip` FOREIGN KEY (`trip_id`) REFERENCES `trip` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_item_spot` FOREIGN KEY (`spot_id`) REFERENCES `spot` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 여행 저널 (Travel Journal) - 기존 테이블 유지. FK는 나중에 수동으로 연결해야 할 수 있음.
-CREATE TABLE `travel_journal` (
-  `id`           BIGINT NOT NULL AUTO_INCREMENT,
-  `user_id`      BIGINT NOT NULL,
-  `title`        VARCHAR(120) NOT NULL,
-  `diary`        TEXT,
-  `is_private`   BOOLEAN NOT NULL DEFAULT FALSE,
-  `is_deleted`   BOOLEAN NOT NULL DEFAULT FALSE,
-  `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_travel_journal_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 
 -- =================================================================
--- 8. 시드 데이터 (Seed Data)
+-- 8. 시드 데이터 (초기 데이터)
 -- =================================================================
 
 -- 기본 역할
-INSERT INTO `role` (id, code, name) VALUES (1, 'USER', '일반 사용자'), (2, 'ADMIN', '관리자');
+INSERT INTO `role` (id, code, name) VALUES
+(1, 'USER',  '일반 사용자'),
+(2, 'ADMIN', '관리자');
 
 -- 기본 사용자 상태
-INSERT INTO `user_status` (id, code, name, description) VALUES (1, 'ACTIVE', '활성', '일반 활성 사용자'), (2, 'DELETED', '탈퇴', '탈퇴 또는 비활성 사용자');
+INSERT INTO `user_status` (id, code, name, description) VALUES
+(1, 'ACTIVE',  '활성', '일반 활성 사용자'),
+(2, 'DELETED', '탈퇴', '탈퇴 또는 비활성 사용자');
 
--- 여행 상태 마스터
-INSERT INTO `trip_status` (id, code, name, description) VALUES (1, 'DRAFT', '작성중', '작성중인 여행 계획'), (2, 'PLANNED', '계획완료', '여행 계획이 완료된 상태'), (3, 'COMPLETED', '여행완료', '실제로 여행이 완료된 상태');
+-- 기본 Trip Status
+INSERT INTO `trip_status` (id, code, name, description) VALUES
+(1, 'DRAFT',     '작성 중',   '작성 중인 여행 계획'),
+(2, 'PLANNED',   '계획 완료', '여행 계획 완료 상태'),
+(3, 'COMPLETED', '여행 완료', '여행이 실제로 완료된 상태');
+
+-- 여행 스타일 (최소 데이터)
+INSERT INTO `travel_style` (id, code, name) VALUES
+(1, 'CAFE_HOPPER', '카페 탐방가'),
+(2, 'ADVENTURER', '모험가'),
+(3, 'FOODIE', '미식가');
+
+-- 배지 (최소 데이터)
+INSERT INTO `badge` (id, code, name, description, icon_url, category, level) VALUES
+(1, 'FIRST_TRIP', '첫 여행', '첫 여행 계획 완료', NULL, 'TRIP', 1),
+(2, 'PHOTO_MASTER', '사진 장인', '사진 100장 업로드', NULL, 'PHOTO', 2);
 
 -- 더미 사용자 (사용자 제공 계정)
 INSERT INTO `user` (id, role_id, status_id, email, password_hash, nickname) VALUES

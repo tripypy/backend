@@ -2,6 +2,7 @@ package com.ssafy.jjtrip.domain.trip.service;
 
 import com.ssafy.jjtrip.domain.spot.service.SpotService;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemsUpdateRequestDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripItem;
@@ -36,12 +37,30 @@ public class TripService {
         return newTrip;
     }
 
-    public List<Trip> findMyTrips(Long userId, TripStatus status) {
+    public List<TripResponseDto> findMyTrips(Long userId, TripStatus status) {
+        List<Trip> trips;
         if (status == null) {
-            return tripMapper.selectByUserId(userId);
+            trips = tripMapper.selectByUserId(userId);
         } else {
-            return tripMapper.selectByUserIdAndStatus(userId, status);
+            trips = tripMapper.selectByUserIdAndStatus(userId, status);
         }
+
+        return trips.stream()
+                 .map(trip -> convertToTripResponseDto(trip, userId))
+                 .toList();
+    }
+
+    private TripResponseDto convertToTripResponseDto(Trip trip, Long userId) {
+        boolean isOwner = trip.getUserId().equals(userId);
+        int spots = tripMapper.countTripItemsByTripId(trip.getId());
+        List<String> spotPreviewNames = tripMapper.selectSpotPreviewNamesByTripId(trip.getId());
+        List<TripResponseDto.SpotPreviewDto> spotPreviews = spotPreviewNames.stream()
+                .map(TripResponseDto.SpotPreviewDto::new)
+                .toList();
+        // Tags are not implemented yet, so return an empty list
+        List<String> tags = List.of();
+
+        return TripResponseDto.from(trip, isOwner, spots, tags, spotPreviews);
     }
 
     public Trip getTripDetail(Long tripId, Long userId) {

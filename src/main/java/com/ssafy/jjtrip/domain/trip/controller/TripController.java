@@ -54,11 +54,8 @@ public class TripController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(value = "status", required = false) TripStatus status
     ) {
-        List<Trip> myTrips = tripService.findMyTrips(userDetails.getUser().getId(), status);
-        List<TripResponseDto> responseDtos = myTrips.stream()
-                .map(TripResponseDto::from)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(responseDtos);
+        List<TripResponseDto> myTrips = tripService.findMyTrips(userDetails.getUser().getId(), status);
+        return ResponseEntity.ok(myTrips);
     }
 
     @GetMapping("/{tripId}")
