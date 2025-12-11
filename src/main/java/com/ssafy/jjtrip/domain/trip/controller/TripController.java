@@ -60,7 +60,8 @@ public class TripController {
 
     @GetMapping("/{tripId}")
     public ResponseEntity<?> getTripDetail(@PathVariable Long tripId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Trip trip = tripService.getTripDetail(tripId, userDetails.getUser().getId());
+        Long userId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        Trip trip = tripService.getTripDetail(tripId, userId);
         TripDetailResponseDto responseDto = TripDetailResponseDto.from(trip);
         return ResponseEntity.ok(responseDto);
     }
