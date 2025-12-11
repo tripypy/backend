@@ -61,7 +61,7 @@ public class SecurityConfig {
                                 "/api/auth/reset-password",
                                 "/api/auth/logout"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/trip-logs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/trip-logs/**", "/api/trips/**").permitAll()
                         .anyRequest().authenticated()
                 )
 

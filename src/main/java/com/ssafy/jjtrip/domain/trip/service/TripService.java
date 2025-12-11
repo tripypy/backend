@@ -66,7 +66,7 @@ public class TripService {
     public Trip getTripDetail(Long tripId, Long userId) {
         Trip trip = findTripById(tripId);
 
-        if (trip.getVisibility() != TripVisibility.PUBLIC && !trip.getUserId().equals(userId)) {
+        if (trip.getVisibility() != TripVisibility.PUBLIC && (userId == null || !trip.getUserId().equals(userId))) {
             throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
         }
 
