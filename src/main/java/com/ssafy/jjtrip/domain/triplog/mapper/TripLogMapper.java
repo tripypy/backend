@@ -3,10 +3,8 @@ package com.ssafy.jjtrip.domain.triplog.mapper;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
-import org.apache.ibatis.annotations.Arg;
-import org.apache.ibatis.annotations.ConstructorArgs;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
+import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -78,5 +76,16 @@ public interface TripLogMapper {
             @Arg(column = "createdAt", javaType = LocalDateTime.class)
     })
     List<TripLogCommentResponseDto> findCommentsByLogId(Long logId);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM trip_log WHERE id = #{logId})")
+    boolean existsById(Long logId);
+
+    @Insert("INSERT INTO log_comment (log_id, user_id, content) " +
+            "VALUES (#{comment.logId}, #{comment.userId}, #{comment.content})")
+    @Options(useGeneratedKeys = true, keyProperty = "comment.id")
+    void insertComment(@Param("comment") TripLogComment comment);
+
+    @Update("UPDATE trip_log SET comment_count = comment_count + 1 WHERE id = #{logId}")
+    void incrementCommentCount(Long logId);
 }
 
