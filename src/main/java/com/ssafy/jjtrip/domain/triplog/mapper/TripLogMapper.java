@@ -87,5 +87,24 @@ public interface TripLogMapper {
 
     @Update("UPDATE trip_log SET comment_count = comment_count + 1 WHERE id = #{logId}")
     void incrementCommentCount(Long logId);
+
+    // Like/Unlike methods
+    @Insert("INSERT IGNORE INTO log_like (log_id, user_id) VALUES (#{logId}, #{userId})")
+    void insertLike(@Param("logId") Long logId, @Param("userId") Long userId);
+
+    @Delete("DELETE FROM log_like WHERE log_id = #{logId} AND user_id = #{userId}")
+    void deleteLike(@Param("logId") Long logId, @Param("userId") Long userId);
+
+    @Update("UPDATE trip_log SET like_count = like_count + 1 WHERE id = #{logId}")
+    void incrementLikeCount(Long logId);
+
+    @Update("UPDATE trip_log SET like_count = like_count - 1 WHERE id = #{logId}")
+    void decrementLikeCount(Long logId);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM log_like WHERE log_id = #{logId} AND user_id = #{userId})")
+    boolean hasUserLiked(@Param("logId") Long logId, @Param("userId") Long userId);
+
+    @Select("SELECT like_count FROM trip_log WHERE id = #{logId}")
+    int getLikeCount(Long logId);
 }
 
