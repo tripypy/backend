@@ -1,8 +1,10 @@
 package com.ssafy.jjtrip.domain.triplog.controller;
 
+import com.ssafy.jjtrip.common.dto.SliceDto;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogService;
 import jakarta.validation.Valid;
@@ -19,6 +21,16 @@ import java.net.URI;
 public class TripLogController {
 
     private final TripLogService tripLogService;
+
+    @GetMapping("/feed")
+    public ResponseEntity<SliceDto<TripLogFeedResponseDto>> getTripLogFeed(
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int limit,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        final Long memberId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        return ResponseEntity.ok(tripLogService.getTripLogFeed(cursor, limit, memberId));
+    }
 
     @GetMapping("/{logId}")
     public ResponseEntity<?> getTripLogDetail(@PathVariable Long logId) {

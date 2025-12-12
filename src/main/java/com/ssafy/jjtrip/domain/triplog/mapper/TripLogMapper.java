@@ -2,6 +2,7 @@ package com.ssafy.jjtrip.domain.triplog.mapper;
 
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import org.apache.ibatis.annotations.*;
@@ -12,6 +13,65 @@ import java.util.Optional;
 
 @Mapper
 public interface TripLogMapper {
+
+    record ImageInfo(Long logId, String imageRefKey, String imageUrl, int orderIndex) {}
+
+    @Select("""
+            <script>
+            SELECT
+                tl.id as logId,
+                u.id as authorId,
+                u.nickname as authorNickname,
+                u.profile_image_url as authorImageUrl,
+                tl.title,
+                tl.content,
+                tl.location_summary as locationSummary,
+                (SELECT COUNT(*) FROM log_like ll WHERE ll.log_id = tl.id) as likeCount,
+                (SELECT COUNT(*) FROM log_comment lc WHERE lc.log_id = tl.id) as commentCount,
+                <if test="memberId != null">
+                    EXISTS(SELECT 1 FROM log_like ll WHERE ll.log_id = tl.id AND ll.user_id = #{memberId}) as liked,
+                </if>
+                <if test="memberId == null">
+                    0 as liked,
+                </if>
+                tl.created_at as createdAt
+            FROM
+                trip_log tl
+            JOIN
+                trip t ON tl.trip_id = t.id
+            JOIN
+                user u ON t.user_id = u.id
+            <where>
+                <if test="cursor != null">
+                    tl.id &lt; #{cursor}
+                </if>
+            </where>
+            ORDER BY
+                tl.id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+    List<TripLogFeedResponseDto.FeedData> findTripLogFeed(@Param("cursor") Long cursor, @Param("limit") int limit, @Param("memberId") Long memberId);
+
+    @Select("""
+            <script>
+            SELECT
+                log_id,
+                image_ref_key,
+                image_url,
+                order_index
+            FROM
+                log_image
+            WHERE
+                log_id IN
+                <foreach item='item' collection='logIds' open='(' separator=',' close=')'>
+                    #{item}
+                </foreach>
+            ORDER BY
+                log_id, order_index ASC
+            </script>
+            """)
+    List<ImageInfo> findImagesByLogIds(@Param("logIds") List<Long> logIds);
 
     @Select("SELECT " +
             "tl.id as logId, " +
