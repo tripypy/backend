@@ -18,8 +18,6 @@ public interface TripLogMapper {
             "tl.title, " +
             "tl.content, " +
             "tl.location_summary as locationSummary, " +
-            "tl.like_count as likeCount, " +
-            "tl.comment_count as commentCount, " +
             "tl.created_at as createdAt, " +
             "u.nickname as authorNickname, " +
             "u.profile_image_url as authorImageUrl, " +
@@ -34,8 +32,6 @@ public interface TripLogMapper {
             @Arg(column = "title", javaType = String.class),
             @Arg(column = "content", javaType = String.class),
             @Arg(column = "locationSummary", javaType = String.class),
-            @Arg(column = "likeCount", javaType = int.class),
-            @Arg(column = "commentCount", javaType = int.class),
             @Arg(column = "createdAt", javaType = LocalDateTime.class),
             @Arg(column = "authorNickname", javaType = String.class),
             @Arg(column = "authorImageUrl", javaType = String.class),
@@ -85,7 +81,18 @@ public interface TripLogMapper {
     @Options(useGeneratedKeys = true, keyProperty = "comment.id")
     void insertComment(@Param("comment") TripLogComment comment);
 
-    @Update("UPDATE trip_log SET comment_count = comment_count + 1 WHERE id = #{logId}")
-    void incrementCommentCount(Long logId);
-}
+    @Select("SELECT COUNT(*) FROM log_comment WHERE log_id = #{logId}")
+    int getCommentCount(Long logId);
 
+    @Insert("INSERT IGNORE INTO log_like (log_id, user_id) VALUES (#{logId}, #{userId})")
+    void insertLike(@Param("logId") Long logId, @Param("userId") Long userId);
+
+    @Delete("DELETE FROM log_like WHERE log_id = #{logId} AND user_id = #{userId}")
+    void deleteLike(@Param("logId") Long logId, @Param("userId") Long userId);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM log_like WHERE log_id = #{logId} AND user_id = #{userId})")
+    boolean hasUserLiked(@Param("logId") Long logId, @Param("userId") Long userId);
+
+    @Select("SELECT COUNT(*) FROM log_like WHERE log_id = #{logId}")
+    int getLikeCount(Long logId);
+}

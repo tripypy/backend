@@ -19,8 +19,6 @@ public class TripLog extends BaseEntityWithUpdate {
     private String title;
     private String content;
     private String locationSummary;
-    private Integer likeCount;
-    private Integer commentCount;
 
     private Trip trip;
     private List<TripLogImage> images;
