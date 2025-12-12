@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice
@@ -43,6 +44,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             WebRequest request) {
 
         return ErrorResponse.from(CommonErrorCode.INVALID_REQUEST).toResponseEntity();
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Object> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String reason = String.format(
+                "입력값 '%s'는 %s 타입이어야 합니다.",
+                ex.getValue(),
+                ex.getRequiredType().getSimpleName()
+        );
+        List<InvalidParam> invalidParams = List.of(new InvalidParam(ex.getName(), reason));
+        return ErrorResponse.of(CommonErrorCode.INVALID_REQUEST, invalidParams).toResponseEntity();
     }
 
 	@ExceptionHandler(IllegalArgumentException.class)
