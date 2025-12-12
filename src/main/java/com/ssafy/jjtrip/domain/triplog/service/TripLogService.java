@@ -27,10 +27,12 @@ public class TripLogService {
                 .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
 
         List<TripLogImageResponseDto> images = tripLogMapper.findImagesByLogId(logId);
-
         List<TripLogCommentResponseDto> comments = tripLogMapper.findCommentsByLogId(logId);
 
-        return TripLogDetailResponseDto.from(baseInfo, images, comments);
+        int likeCount = tripLogMapper.getLikeCount(logId);
+        int commentCount = tripLogMapper.getCommentCount(logId);
+
+        return TripLogDetailResponseDto.from(baseInfo, images, comments, likeCount, commentCount);
     }
 
     @Transactional
@@ -45,7 +47,6 @@ public class TripLogService {
                 .content(commentRequestDto.content())
                 .build();
         tripLogMapper.insertComment(comment);
-        tripLogMapper.incrementCommentCount(logId);
     }
 
     public TripLogLikeResponseDto getLikeStatus(Long logId, Long userId) {
@@ -63,7 +64,6 @@ public class TripLogService {
             throw new TripLogException(TripLogErrorCode.LOG_NOT_FOUND);
         }
         tripLogMapper.insertLike(logId, userId);
-        tripLogMapper.incrementLikeCount(logId);
         int likeCount = tripLogMapper.getLikeCount(logId);
         return new TripLogLikeResponseDto(true, likeCount);
     }
@@ -74,7 +74,6 @@ public class TripLogService {
             throw new TripLogException(TripLogErrorCode.LOG_NOT_FOUND);
         }
         tripLogMapper.deleteLike(logId, userId);
-        tripLogMapper.decrementLikeCount(logId);
         int likeCount = tripLogMapper.getLikeCount(logId);
         return new TripLogLikeResponseDto(false, likeCount);
     }

@@ -152,8 +152,6 @@ CREATE TABLE `trip_log` (
   `title`            VARCHAR(255) NOT NULL,
   `content`          TEXT COMMENT '마크다운 형식 본문. 이미지는 {{img_key}} 형태의 참조 키 사용',
   `location_summary` VARCHAR(255) COMMENT '장소 요약 (예: 서울시 or 서울시 강남구 or 서울시 강남구 역삼동)',
-  `like_count`       INT NOT NULL DEFAULT 0 COMMENT '좋아요 수',
-  `comment_count`    INT NOT NULL DEFAULT 0 COMMENT '댓글 수',
   `created_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -253,10 +251,10 @@ INSERT INTO `trip_item` (trip_id, spot_id, day_number, order_index, memo) VALUES
 
 -- 더미 여행 로그 (이미지 플레이스홀더 적용: 고유 키 방식)
 -- {{img_a1b2}} 처럼 프론트가 생성한 고유 키를 사용
-INSERT INTO `trip_log` (id, trip_id, title, content, location_summary, like_count, comment_count) VALUES
+INSERT INTO `trip_log` (id, trip_id, title, content, location_summary) VALUES
 (1, 1, '제주도 2박 3일 여행기',
 '이번 제주도 여행의 시작은 아쿠아플라넷이었습니다.\n\n{{img_key_1}}\n\n수족관 규모가 정말 커서 놀랐어요. 상어도 보고 가오리도 봤네요.\n그 다음날 아침에는 일출을 보러 갔습니다.\n\n{{img_key_2}}\n\n날씨가 좋아서 해 뜨는 게 아주 잘 보였습니다. 정말 잊지 못할 추억이에요.',
-'제주 서귀포시', 0, 0);
+'제주 서귀포시');
 
 -- 더미 여행 기록 이미지 (image_ref_key 포함)
 -- order_index: 피드 뷰 정렬용
