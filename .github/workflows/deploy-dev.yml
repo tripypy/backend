@@ -16,12 +16,13 @@ jobs:
   ci:
     name: CI (maven test)
     runs-on: ubuntu-latest
+    environment: dev
     steps:
       - name: Checkout (with submodules)
         uses: actions/checkout@v4
         with:
           submodules: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -38,6 +39,7 @@ jobs:
   build_and_push:
     name: Build & Push (GHCR)
     runs-on: ubuntu-latest
+    environment: dev
     needs: ci
 
     outputs:
@@ -48,7 +50,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       - name: Compute image tag
         id: vars
