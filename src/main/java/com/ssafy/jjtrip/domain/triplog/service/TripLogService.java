@@ -1,10 +1,7 @@
 package com.ssafy.jjtrip.domain.triplog.service;
 
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
+import com.ssafy.jjtrip.common.dto.SliceDto;
+import com.ssafy.jjtrip.domain.triplog.dto.*;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogErrorCode;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogException;
@@ -13,7 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +21,44 @@ import java.util.List;
 public class TripLogService {
 
     private final TripLogMapper tripLogMapper;
+
+    public SliceDto<TripLogFeedResponseDto> getTripLogFeed(Long cursor, int limit, Long memberId) {
+        final int queryLimit = limit + 1;
+        List<TripLogFeedResponseDto.FeedData> tripLogsData = tripLogMapper.findTripLogFeed(cursor, queryLimit, memberId);
+
+        boolean hasNext = tripLogsData.size() > limit;
+        if (hasNext) {
+            tripLogsData.remove(limit);
+        }
+
+        Long nextCursor = null;
+        if (!tripLogsData.isEmpty()) {
+            nextCursor = tripLogsData.get(tripLogsData.size() - 1).logId();
+        }
+
+        List<TripLogFeedResponseDto> tripLogs;
+        if (tripLogsData.isEmpty()) {
+            tripLogs = Collections.emptyList();
+        } else {
+            List<Long> logIds = tripLogsData.stream().map(TripLogFeedResponseDto.FeedData::logId).toList();
+            List<TripLogMapper.ImageInfo> images = tripLogMapper.findImagesByLogIds(logIds);
+
+            Map<Long, List<TripLogImageResponseDto>> imagesByLogId = images.stream()
+                    .collect(Collectors.groupingBy(
+                            TripLogMapper.ImageInfo::logId,
+                            Collectors.mapping(
+                                    imageInfo -> new TripLogImageResponseDto(imageInfo.imageRefKey(), imageInfo.imageUrl(), imageInfo.orderIndex()),
+                                    Collectors.toList()
+                            )
+                    ));
+
+            tripLogs = tripLogsData.stream()
+                    .map(data -> TripLogFeedResponseDto.from(data, imagesByLogId.getOrDefault(data.logId(), Collections.emptyList())))
+                    .toList();
+        }
+
+        return new SliceDto<>(tripLogs, nextCursor, hasNext);
+    }
 
     public TripLogDetailResponseDto getTripLogDetail(Long logId) {
         TripLogDetailResponseDto.BaseInfo baseInfo = tripLogMapper.findDetailById(logId)
