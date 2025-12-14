@@ -62,6 +62,9 @@ public interface UserMapper {
             "VALUES (#{user.role.id}, #{user.status.id}, #{user.email}, #{user.passwordHash}, #{user.nickname})")
     @Options(useGeneratedKeys = true, keyProperty = "user.id")
     void save(@Param("user") User user);
+
+    @Insert("INSERT INTO user_profile (user_id, friends_count, is_profile_public) VALUES (#{userId}, 0, true)")
+    void saveUserProfile(@Param("userId") Long userId);
     
     @Insert("INSERT INTO user_profile (user_id, bio) VALUES (#{userId}, #{bio}) " +
             "ON DUPLICATE KEY UPDATE bio = VALUES(bio)")
