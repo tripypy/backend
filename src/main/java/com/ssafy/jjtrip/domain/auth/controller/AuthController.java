@@ -59,8 +59,8 @@ public class AuthController {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
                 .maxAge(0)
                 .path("/")
-                .secure(true)
-                .sameSite("None")
+                .secure(false)
+                .sameSite("Lax")
                 .httpOnly(true)
                 .build();
 
