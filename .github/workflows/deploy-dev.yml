@@ -1,0 +1,105 @@
+name: Dev Deploy
+
+on:
+  push:
+    branches: [ "develop" ]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  ci:
+    name: CI (maven test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Test
+        run: |
+          chmod +x mvnw
+          ./mvnw test
+
+  build_and_push:
+    name: Build & Push (GHCR)
+    runs-on: ubuntu-latest
+    needs: ci
+
+    outputs:
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: vars
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "image_tag=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./deploy/app/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.image_tag }}
+
+  deploy:
+    name: Deploy to Dev Server
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    environment: dev
+
+    steps:
+      - name: Deploy via SSH (update IMAGE_NAME, pull, up)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.KT_HOST }}
+          username: ${{ secrets.KT_USER }}
+          key: ${{ secrets.KT_SSH_KEY }}
+          port: ${{ secrets.KT_SSH_PORT }}
+          script: |
+            set -e
+            cd /home/${{ secrets.KT_USER }}/trit-server
+
+            # (선택) compose/nginx 설정 변경을 같이 반영하고 싶으면 유지
+            git pull origin develop
+
+            # IMAGE_NAME을 이번 커밋 이미지로 업데이트 (서버 .env에 IMAGE_NAME이 있어야 함)
+            NEW_IMAGE="ghcr.io/${{ github.repository }}:${{ needs.build_and_push.outputs.image_tag }}"
+
+            if [ ! -f .env ]; then
+              echo ".env not found in $(pwd). Create it first." >&2
+              exit 1
+            fi
+
+            if grep -q '^IMAGE_NAME=' .env; then
+              sed -i "s|^IMAGE_NAME=.*|IMAGE_NAME=${NEW_IMAGE}|" .env
+            else
+              echo "IMAGE_NAME=${NEW_IMAGE}" >> .env
+            fi
+
+            docker compose pull app
+            docker compose up -d
+            docker image prune -f
