@@ -45,8 +45,10 @@ services:
       - app
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - trit-net
 
