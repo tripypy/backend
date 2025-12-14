@@ -74,6 +74,7 @@ public class AuthService {
         validateDuplicateNickname(signupRequestDto.nickname());
         User user = buildNewUser(signupRequestDto);
         userMapper.save(user);
+        userMapper.saveUserProfile(user.getId());
     }
 
     @Transactional
