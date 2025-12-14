@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-@Profile("!test") // 테스트 환경에서는 실행되지 않도록 설정
+@Profile("!dev")
 @Configuration
 @EnableConfigurationProperties(SshTunnelingProperties.class)
 public class SshTunnelingInitializer {
