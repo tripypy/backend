@@ -588,3 +588,7 @@ $RECYCLE.BIN/
 !maven-wrapper.jar
 !src/main/resources/maven-wrapper.jar
 !.mvn/wrapper/maven-wrapper.jar
+
+# etc
+bulk
+.venv
