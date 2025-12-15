@@ -1,0 +1,81 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "ko_text": { "type": "standard" },
+        "ko_autocomplete": {
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding", "edge_ngram_filter"]
+        }
+      },
+      "filter": {
+        "edge_ngram_filter": { "type": "edge_ngram", "min_gram": 1, "max_gram": 20 }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "false",
+    "properties": {
+      "tripId": { "type": "long" },
+      "userId": { "type": "long" },
+      "status": { "type": "keyword" },
+      "visibility": { "type": "keyword" },
+
+      "title": {
+        "type": "text",
+        "analyzer": "ko_text",
+        "fields": {
+          "keyword": { "type": "keyword" },
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "ko_autocomplete",
+            "search_analyzer": "ko_text"
+          }
+        }
+      },
+
+      "startDate": { "type": "date" },
+      "endDate": { "type": "date" },
+      "createdAt": { "type": "date" },
+      "updatedAt": { "type": "date" },
+
+      "spots": {
+        "type": "nested",
+        "properties": {
+          "spotId": { "type": "long" },
+
+          "name": {
+            "type": "text",
+            "analyzer": "ko_text",
+            "fields": {
+              "keyword": { "type": "keyword" },
+              "autocomplete": {
+                "type": "text",
+                "analyzer": "ko_autocomplete",
+                "search_analyzer": "ko_text"
+              }
+            }
+          },
+
+          "category": {
+            "type": "text",
+            "analyzer": "ko_text",
+            "fields": { "keyword": { "type": "keyword" } }
+          },
+
+          "address": {
+            "type": "text",
+            "analyzer": "ko_text",
+            "fields": { "keyword": { "type": "keyword" } }
+          },
+
+          "location": { "type": "geo_point" },
+          "dayNumber": { "type": "integer" },
+          "orderIndex": { "type": "integer" }
+        }
+      }
+    }
+  }
+}
