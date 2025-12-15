@@ -28,7 +28,11 @@
         "analyzer": "ko_text",
         "fields": {
           "keyword": { "type": "keyword" },
-          "autocomplete": { "type": "text", "analyzer": "ko_autocomplete", "search_analyzer": "ko_text" }
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "ko_autocomplete",
+            "search_analyzer": "ko_text"
+          }
         }
       },
 
@@ -41,9 +45,32 @@
         "type": "nested",
         "properties": {
           "spotId": { "type": "long" },
-          "name": { "type": "text", "analyzer": "ko_text", "fields": { "keyword": { "type": "keyword" } } },
-          "category": { "type": "keyword" },
-          "address": { "type": "keyword" },
+
+          "name": {
+            "type": "text",
+            "analyzer": "ko_text",
+            "fields": {
+              "keyword": { "type": "keyword" },
+              "autocomplete": {
+                "type": "text",
+                "analyzer": "ko_autocomplete",
+                "search_analyzer": "ko_text"
+              }
+            }
+          },
+
+          "category": {
+            "type": "text",
+            "analyzer": "ko_text",
+            "fields": { "keyword": { "type": "keyword" } }
+          },
+
+          "address": {
+            "type": "text",
+            "analyzer": "ko_text",
+            "fields": { "keyword": { "type": "keyword" } }
+          },
+
           "location": { "type": "geo_point" },
           "dayNumber": { "type": "integer" },
           "orderIndex": { "type": "integer" }
