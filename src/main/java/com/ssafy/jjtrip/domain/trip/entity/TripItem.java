@@ -19,6 +19,5 @@ public class TripItem extends BaseEntity {
     private Long spotId;
     private int dayNumber;
     private int orderIndex;
-    private String memo;
     private Spot spot;
 }

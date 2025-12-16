@@ -1,7 +1,7 @@
 package com.ssafy.jjtrip.domain.trip.service;
 
 import com.ssafy.jjtrip.domain.spot.service.SpotService;
-import com.ssafy.jjtrip.domain.trip.dto.TripItemsUpdateRequestDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripItemsReplaceRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
@@ -23,6 +23,7 @@ public class TripService {
 
     private final TripMapper tripMapper;
     private final SpotService spotService;
+    private final LocationSummaryService locationSummaryService;
 
     @Transactional
     public Trip createTrip(Long userId) {
@@ -79,11 +80,12 @@ public class TripService {
     public void updateTrip(Long tripId, TripUpdateRequestDto requestDto, Long userId) {
         Trip trip = getTripForModification(tripId, userId);
 
-        trip.setTitle(requestDto.title());
-        trip.setStartDate(requestDto.startDate());
-        trip.setEndDate(requestDto.endDate());
-        trip.setStatus(requestDto.status());
-        trip.setVisibility(requestDto.visibility());
+        if (requestDto.title() != null) trip.setTitle(requestDto.title());
+        if (requestDto.startDate() != null) trip.setStartDate(requestDto.startDate());
+        if (requestDto.endDate() != null) trip.setEndDate(requestDto.endDate());
+        if (requestDto.status() != null) trip.setStatus(requestDto.status());
+        if (requestDto.visibility() != null) trip.setVisibility(requestDto.visibility());
+
         tripMapper.update(trip);
     }
 
@@ -94,13 +96,31 @@ public class TripService {
     }
 
     @Transactional
-    public List<TripItem> updateAllTripItems(Long tripId, TripItemsUpdateRequestDto requestDto, Long userId) {
-        getTripForModification(tripId, userId);
+    public void replaceTripItems(Long tripId, TripItemsReplaceRequestDto dto, Long userId) {
+        validateTripOwner(tripId, userId);
 
-        TripItemsSynchronizer synchronizer = new TripItemsSynchronizer(tripId, requestDto, tripMapper, spotService);
-        synchronizer.sync();
+        tripMapper.deleteTripItemsByTripId(tripId);
 
-        return tripMapper.selectItemsByTripId(tripId);
+        for (var day : dto.days()) {
+            int order = 1;
+            for (var item : day.items()) {
+                Long spotId = resolveSpotId(item);
+                tripMapper.insertTripItem(tripId, spotId, day.dayNumber(), order++);
+            }
+        }
+
+        locationSummaryService.updateLocationSummary(tripId);
+    }
+
+    private Long resolveSpotId(TripItemsReplaceRequestDto.Item item) {
+        item.validate();
+
+        if (item.spotId() != null) {
+            spotService.validateExists(item.spotId());
+            return item.spotId();
+        }
+
+        return spotService.findOrCreate(item.spot().toEntity()).getId();
     }
 
     private Trip findTripById(Long tripId) {
@@ -114,5 +134,11 @@ public class TripService {
             throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
         }
         return trip;
+    }
+
+    private void validateTripOwner(Long tripId, Long userId) {
+        if (!tripMapper.existsByIdAndUserId(tripId, userId)) {
+            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
+        }
     }
 }

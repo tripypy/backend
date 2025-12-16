@@ -2,23 +2,21 @@ package com.ssafy.jjtrip.domain.trip.controller;
 
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
-import com.ssafy.jjtrip.domain.trip.dto.TripItemResponseDto;
-import com.ssafy.jjtrip.domain.trip.dto.TripItemsUpdateRequestDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripItemsReplaceRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
-import com.ssafy.jjtrip.domain.trip.entity.TripItem;
 import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
 import com.ssafy.jjtrip.domain.trip.service.TripService;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -48,7 +46,6 @@ public class TripController {
         return ResponseEntity.created(location).body(responseDto);
     }
 
-
     @GetMapping
     public ResponseEntity<?> getMyTrips(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -66,10 +63,12 @@ public class TripController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @PutMapping("/{tripId}")
-    public ResponseEntity<?> updateTrip(@PathVariable Long tripId,
-                                           @Valid @RequestBody TripUpdateRequestDto requestDto,
-                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+    @PatchMapping("/{tripId}")
+    public ResponseEntity<Void> updateTrip(
+            @PathVariable Long tripId,
+            @RequestBody TripUpdateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
         tripService.updateTrip(tripId, requestDto, userDetails.getUser().getId());
         return ResponseEntity.ok().build();
     }
@@ -81,15 +80,12 @@ public class TripController {
     }
 
     @PutMapping("/{tripId}/items")
-    public ResponseEntity<?> updateAllTripItems(
+    public ResponseEntity<?> replaceTripItems(
             @PathVariable Long tripId,
-            @Valid @RequestBody TripItemsUpdateRequestDto requestDto,
+            @Valid @RequestBody TripItemsReplaceRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        List<TripItem> updatedItems = tripService.updateAllTripItems(tripId, requestDto, userDetails.getUser().getId());
-        List<TripItemResponseDto> responseDtos = updatedItems.stream()
-                .map(TripItemResponseDto::from)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(responseDtos);
+        tripService.replaceTripItems(tripId, requestDto, userDetails.getUser().getId());
+        return ResponseEntity.ok().build();
     }
 }

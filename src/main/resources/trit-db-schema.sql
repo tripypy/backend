@@ -115,6 +115,7 @@ CREATE TABLE `trip` (
   `start_date`     DATE,
   `end_date`       DATE,
   `visibility`     VARCHAR(20) NOT NULL DEFAULT 'PRIVATE' COMMENT "'PUBLIC' 또는 'PRIVATE'",
+  `location_summary` VARCHAR(255) COMMENT '장소 요약 (예: 서울시 or 서울시 강남구 or 서울시 강남구 역삼동)',
   `created_at`     DATETIME DEFAULT NOW(),
   `updated_at`     DATETIME,
   PRIMARY KEY (`id`),
@@ -129,7 +130,6 @@ CREATE TABLE `trip_item` (
   `spot_id`     BIGINT NOT NULL,
   `day_number`  INT NOT NULL,              -- 1일차, 2일차...
   `order_index` INT NOT NULL,              -- 방문 순서
-  `memo`        TEXT,
   `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
 
@@ -140,6 +140,16 @@ CREATE TABLE `trip_item` (
   CONSTRAINT `fk_item_spot` FOREIGN KEY (`spot_id`) REFERENCES `spot` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `trip_day_memo` (
+  `trip_id`     BIGINT NOT NULL,
+  `day_number`  INT NOT NULL,
+  `memo`        TEXT,
+  `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`trip_id`, `day_number`),
+  CONSTRAINT `fk_trip_day_memo_trip`
+    FOREIGN KEY (`trip_id`) REFERENCES `trip` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ==========================================
 -- ✍️ 4. 여행 기록 (Trip Log Domain)
@@ -151,7 +161,6 @@ CREATE TABLE `trip_log` (
   `trip_id`          BIGINT NOT NULL,
   `title`            VARCHAR(255) NOT NULL,
   `content`          TEXT COMMENT '마크다운 형식 본문. 이미지는 {{img_key}} 형태의 참조 키 사용',
-  `location_summary` VARCHAR(255) COMMENT '장소 요약 (예: 서울시 or 서울시 강남구 or 서울시 강남구 역삼동)',
   `created_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

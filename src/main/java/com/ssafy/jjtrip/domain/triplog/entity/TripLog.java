@@ -2,12 +2,11 @@ package com.ssafy.jjtrip.domain.triplog.entity;
 
 import com.ssafy.jjtrip.common.entity.BaseEntityWithUpdate;
 import com.ssafy.jjtrip.domain.trip.entity.Trip;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @Getter
 @Setter
@@ -18,7 +17,6 @@ public class TripLog extends BaseEntityWithUpdate {
     private Long tripId;
     private String title;
     private String content;
-    private String locationSummary;
 
     private Trip trip;
     private List<TripLogImage> images;
