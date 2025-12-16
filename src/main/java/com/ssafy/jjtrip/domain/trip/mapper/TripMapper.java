@@ -98,7 +98,8 @@ public interface TripMapper {
             "start_date = #{startDate}, " +
             "end_date = #{endDate}, " +
             "trip_status_id = #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler}, " +
-            "visibility = #{visibility, typeHandler=org.apache.ibatis.type.EnumTypeHandler} " +
+            "visibility = #{visibility, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, " +
+            "location_summary = #{locationSummary} " +
             "WHERE id = #{id}")
     void update(Trip trip);
 

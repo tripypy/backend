@@ -23,6 +23,7 @@ public class TripService {
 
     private final TripMapper tripMapper;
     private final SpotService spotService;
+    private final LocationSummaryService locationSummaryService;
 
     @Transactional
     public Trip createTrip(Long userId) {
@@ -100,7 +101,9 @@ public class TripService {
         TripItemsSynchronizer synchronizer = new TripItemsSynchronizer(tripId, requestDto, tripMapper, spotService);
         synchronizer.sync();
 
-        return tripMapper.selectItemsByTripId(tripId);
+        locationSummaryService.updateLocationSummary(tripId);
+
+        return tripMapper.selectItemsWithSpotsByTripId(tripId);
     }
 
     private Trip findTripById(Long tripId) {
