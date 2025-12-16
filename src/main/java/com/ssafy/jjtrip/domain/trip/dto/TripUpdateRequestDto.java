@@ -18,9 +18,6 @@ public record TripUpdateRequestDto(
     TripStatus status,
 
     @NotNull(message = "공개 여부는 필수입니다.")
-    TripVisibility visibility,
-
-    String locationSummary
+    TripVisibility visibility
 ) {
 }
-
