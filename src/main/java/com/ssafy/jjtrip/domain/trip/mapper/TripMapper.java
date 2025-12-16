@@ -154,4 +154,30 @@ public interface TripMapper {
         WHERE id = #{tripId}
     """)
     int updateLocationSummary(@Param("tripId") Long tripId, @Param("locationSummary") String locationSummary);
+
+    @Select({
+            "<script>",
+            "SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, created_at, updated_at ",
+            "FROM trip WHERE user_id = #{userId} ",
+            "<if test='statuses != null and statuses.size > 0'>",
+            "AND trip_status_id IN ",
+            "<foreach item='status' collection='statuses' open='(' separator=',' close=')'>",
+            "#{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler}",
+            "</foreach>",
+            "</if>",
+            "ORDER BY created_at DESC",
+            "</script>"
+    })
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "userId", column = "user_id"),
+            @Result(property = "status", column = "trip_status_id", javaType = TripStatus.class, typeHandler = TripStatusIdTypeHandler.class),
+            @Result(property = "visibility", column = "visibility", javaType = TripVisibility.class, typeHandler = EnumTypeHandler.class),
+            @Result(property = "title", column = "title"),
+            @Result(property = "startDate", column = "start_date"),
+            @Result(property = "endDate", column = "end_date"),
+            @Result(property = "createdAt", column = "created_at"),
+            @Result(property = "updatedAt", column = "updated_at")
+    })
+    List<Trip> selectByUserIdAndStatuses(@Param("userId") Long userId, @Param("statuses") List<TripStatus> statuses);
 }
