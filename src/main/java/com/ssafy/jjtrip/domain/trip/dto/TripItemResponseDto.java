@@ -7,7 +7,6 @@ public record TripItemResponseDto(
     Long id,
     int dayNumber,
     int orderIndex,
-    String memo,
     SpotResponseDto spot
 ) {
     public static TripItemResponseDto from(TripItem entity) {
@@ -15,7 +14,6 @@ public record TripItemResponseDto(
                 entity.getId(),
                 entity.getDayNumber(),
                 entity.getOrderIndex(),
-                entity.getMemo(),
                 SpotResponseDto.from(entity.getSpot())
         );
     }

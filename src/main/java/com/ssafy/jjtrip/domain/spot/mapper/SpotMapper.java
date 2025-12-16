@@ -1,12 +1,12 @@
 package com.ssafy.jjtrip.domain.spot.mapper;
 
 import com.ssafy.jjtrip.domain.spot.entity.Spot;
+import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
-
-import java.util.Optional;
 
 @Mapper
 public interface SpotMapper {
@@ -19,4 +19,11 @@ public interface SpotMapper {
             "VALUES (#{kakaoPlaceId}, #{name}, #{address}, #{category}, #{lat}, #{lng}, #{placeUrl}, #{thumbnailUrl})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Spot spot);
+
+    @Select("""
+        SELECT EXISTS(
+            SELECT 1 FROM spot WHERE id = #{spotId}
+        )
+    """)
+    boolean existsById(@Param("spotId") Long spotId);
 }

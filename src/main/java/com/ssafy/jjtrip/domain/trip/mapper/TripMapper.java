@@ -4,11 +4,18 @@ import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripItem;
 import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
 import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
-import org.apache.ibatis.annotations.*;
-import org.apache.ibatis.type.EnumTypeHandler;
-
 import java.util.List;
 import java.util.Optional;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.type.EnumTypeHandler;
 
 @Mapper
 public interface TripMapper {
@@ -60,13 +67,8 @@ public interface TripMapper {
     })
     Optional<Trip> selectById(Long tripId);
 
-    @Select("SELECT id, trip_id, spot_id, day_number, order_index, memo, created_at " +
-            "FROM trip_item WHERE trip_id = #{tripId} " +
-            "ORDER BY day_number, order_index")
-    List<TripItem> selectItemsByTripId(Long tripId);
-
     @Select("SELECT " +
-            "ti.id, ti.trip_id, ti.spot_id, ti.day_number, ti.order_index, ti.memo, " +
+            "ti.id, ti.trip_id, ti.spot_id, ti.day_number, ti.order_index,  " +
             "s.id as s_id, s.kakao_place_id as s_kakao_place_id, s.name as s_name, s.address as s_address, s.category as s_category, " +
             "s.lat as s_lat, s.lng as s_lng, s.place_url as s_place_url, s.thumbnail_url as s_thumbnail_url " +
             "FROM trip_item ti " +
@@ -79,7 +81,6 @@ public interface TripMapper {
             @Result(property = "spotId", column = "spot_id"),
             @Result(property = "dayNumber", column = "day_number"),
             @Result(property = "orderIndex", column = "order_index"),
-            @Result(property = "memo", column = "memo"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "spot.id", column = "s_id"),
             @Result(property = "spot.kakaoPlaceId", column = "s_kakao_place_id"),
@@ -106,39 +107,35 @@ public interface TripMapper {
     @Delete("DELETE FROM trip WHERE id = #{tripId}")
     void delete(Long tripId);
 
-    @Insert("INSERT INTO trip_item (trip_id, spot_id, day_number, order_index, memo) " +
-            "VALUES (#{tripId}, #{spotId}, #{dayNumber}, #{orderIndex}, #{memo})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    void insertTripItem(TripItem tripItem);
-
-    @Delete({
-            "<script>",
-            "DELETE FROM trip_item WHERE id IN ",
-            "<foreach item='item' collection='list' open='(' separator=',' close=')'>",
-            "#{item}",
-            "</foreach>",
-            "</script>"
-    })
-    void deleteTripItemsByIds(@Param("list") List<Long> tripItemIds);
-
-    @Update("UPDATE trip_item SET day_number = #{dayNumber}, order_index = #{orderIndex}, memo = #{memo} WHERE id = #{id}")
-    void updateTripItemDetails(@Param("id") Long id, @Param("dayNumber") int dayNumber, @Param("orderIndex") int orderIndex, @Param("memo") String memo);
-
-    @Update({
-            "<script>",
-            "UPDATE trip_item",
-            "SET order_index = -order_index",
-            "WHERE id IN",
-            "<foreach item='id' collection='ids' open='(' separator=',' close=')'>",
-            "#{id}",
-            "</foreach>",
-            "</script>"
-    })
-    void parkTripItems(@Param("ids") List<Long> ids);
-
     @Select("SELECT COUNT(id) FROM trip_item WHERE trip_id = #{tripId}")
     int countTripItemsByTripId(Long tripId);
 
     @Select("SELECT s.name FROM trip_item ti JOIN spot s ON ti.spot_id = s.id WHERE ti.trip_id = #{tripId} ORDER BY ti.day_number, ti.order_index LIMIT 3")
     List<String> selectSpotPreviewNamesByTripId(Long tripId);
+
+    @Select("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM trip
+            WHERE id = #{tripId} AND user_id = #{userId}
+        )
+    """)
+    boolean existsByIdAndUserId(@Param("tripId") Long tripId, @Param("userId") Long userId);
+
+    @Delete("""
+        DELETE FROM trip_item
+        WHERE trip_id = #{tripId}
+    """)
+    int deleteTripItemsByTripId(@Param("tripId") Long tripId);
+
+    @Insert("""
+        INSERT INTO trip_item (trip_id, spot_id, day_number, order_index)
+        VALUES (#{tripId}, #{spotId}, #{dayNumber}, #{orderIndex})
+    """)
+    int insertTripItem(
+            @Param("tripId") Long tripId,
+            @Param("spotId") Long spotId,
+            @Param("dayNumber") int dayNumber,
+            @Param("orderIndex") int orderIndex
+    );
 }
