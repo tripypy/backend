@@ -100,7 +100,6 @@ public interface TripMapper {
             "end_date = #{endDate}, " +
             "trip_status_id = #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler}, " +
             "visibility = #{visibility, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, " +
-            "location_summary = #{locationSummary} " +
             "WHERE id = #{id}")
     void update(Trip trip);
 
@@ -138,4 +137,11 @@ public interface TripMapper {
             @Param("dayNumber") int dayNumber,
             @Param("orderIndex") int orderIndex
     );
+
+    @Update("""
+        UPDATE trip
+        SET location_summary = #{locationSummary}, updated_at = NOW()
+        WHERE id = #{tripId}
+    """)
+    int updateLocationSummary(@Param("tripId") Long tripId, @Param("locationSummary") String locationSummary);
 }

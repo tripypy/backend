@@ -101,16 +101,14 @@ public class TripService {
         tripMapper.deleteTripItemsByTripId(tripId);
 
         for (var day : dto.days()) {
-            insertDayItems(tripId, day);
+            int order = 1;
+            for (var item : day.items()) {
+                Long spotId = resolveSpotId(item);
+                tripMapper.insertTripItem(tripId, spotId, day.dayNumber(), order++);
+            }
         }
-    }
 
-    private void insertDayItems(Long tripId, TripItemsReplaceRequestDto.Day day) {
-        int order = 1;
-        for (var item : day.items()) {
-            Long spotId = resolveSpotId(item);
-            tripMapper.insertTripItem(tripId, spotId, day.dayNumber(), order++);
-        }
+        locationSummaryService.updateLocationSummary(tripId);
     }
 
     private Long resolveSpotId(TripItemsReplaceRequestDto.Item item) {
