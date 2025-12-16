@@ -1,11 +1,14 @@
 package com.ssafy.jjtrip.domain.user.dto.response;
 
+import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogSummaryDto; // LogSummaryDto -> TripLogSummaryDto
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter; // Added for deserialization if needed in some contexts
+
+import java.util.List;
 
 @Getter
-@Setter
 @Builder
 public class UserProfileResponseDto {
     private Long id;
@@ -19,22 +22,9 @@ public class UserProfileResponseDto {
     private Long travelStyleId;
     private String profileBannerUrl;
     private Boolean isProfilePublic;
-    private int friendsCount; // Added friendsCount
+    private int friendsCount;
 
-    public static UserProfileResponseDto from(UserAndProfileDto userAndProfile) {
-        return UserProfileResponseDto.builder()
-                .id(userAndProfile.getId())
-                .email(userAndProfile.getEmail())
-                .nickname(userAndProfile.getNickname())
-                .profileImageUrl(userAndProfile.getProfileImageUrl())
-                .bio(userAndProfile.getBio())
-                .intro(userAndProfile.getIntro())
-                .homeRegionId(userAndProfile.getHomeRegionId())
-                .travelStyleSummary(userAndProfile.getTravelStyleSummary())
-                .travelStyleId(userAndProfile.getTravelStyleId())
-                .profileBannerUrl(userAndProfile.getProfileBannerUrl())
-                .isProfilePublic(userAndProfile.getIsProfilePublic())
-                .friendsCount(userAndProfile.getFriendsCount()) // Map friendsCount
-                .build();
-    }
+    private List<TripResponseDto> tripOverviews;
+    private List<TripDetailResponseDto> completedTripDetails;
+    private List<TripLogSummaryDto> logs;
 }
