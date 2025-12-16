@@ -25,7 +25,7 @@ public interface TripLogMapper {
                 u.profile_image_url as authorImageUrl,
                 tl.title,
                 tl.content,
-                tl.location_summary as locationSummary,
+                t.location_summary as locationSummary,
                 (SELECT COUNT(*) FROM log_like ll WHERE ll.log_id = tl.id) as likeCount,
                 (SELECT COUNT(*) FROM log_comment lc WHERE lc.log_id = tl.id) as commentCount,
                 <if test="memberId != null">
@@ -77,7 +77,7 @@ public interface TripLogMapper {
             "tl.id as logId, " +
             "tl.title, " +
             "tl.content, " +
-            "tl.location_summary as locationSummary, " +
+            "t.location_summary as locationSummary, " +
             "tl.created_at as createdAt, " +
             "u.nickname as authorNickname, " +
             "u.profile_image_url as authorImageUrl, " +
