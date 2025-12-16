@@ -130,7 +130,6 @@ CREATE TABLE `trip_item` (
   `spot_id`     BIGINT NOT NULL,
   `day_number`  INT NOT NULL,              -- 1일차, 2일차...
   `order_index` INT NOT NULL,              -- 방문 순서
-  `memo`        TEXT,
   `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
 
@@ -141,6 +140,16 @@ CREATE TABLE `trip_item` (
   CONSTRAINT `fk_item_spot` FOREIGN KEY (`spot_id`) REFERENCES `spot` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `trip_day_memo` (
+  `trip_id`     BIGINT NOT NULL,
+  `day_number`  INT NOT NULL,
+  `memo`        TEXT,
+  `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`trip_id`, `day_number`),
+  CONSTRAINT `fk_trip_day_memo_trip`
+    FOREIGN KEY (`trip_id`) REFERENCES `trip` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ==========================================
 -- ✍️ 4. 여행 기록 (Trip Log Domain)
