@@ -18,7 +18,7 @@ public interface TripMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Trip trip);
 
-    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, created_at, updated_at " +
+    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, location_summary, created_at, updated_at " +
             "FROM trip WHERE user_id = #{userId} ORDER BY created_at DESC")
     @Results({
             @Result(property = "userId", column = "user_id"),
@@ -26,12 +26,13 @@ public interface TripMapper {
             @Result(property = "visibility", column = "visibility", javaType = TripVisibility.class, typeHandler = EnumTypeHandler.class),
             @Result(property = "startDate", column = "start_date"),
             @Result(property = "endDate", column = "end_date"),
+            @Result(property = "locationSummary", column = "location_summary"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
     List<Trip> selectByUserId(Long userId);
 
-    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, created_at, updated_at " +
+    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, location_summary, created_at, updated_at " +
             "FROM trip WHERE user_id = #{userId} AND trip_status_id = #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler} ORDER BY created_at DESC")
     @Results({
             @Result(property = "userId", column = "user_id"),
@@ -39,12 +40,13 @@ public interface TripMapper {
             @Result(property = "visibility", column = "visibility", javaType = TripVisibility.class, typeHandler = EnumTypeHandler.class),
             @Result(property = "startDate", column = "start_date"),
             @Result(property = "endDate", column = "end_date"),
+            @Result(property = "locationSummary", column = "location_summary"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
     List<Trip> selectByUserIdAndStatus(@Param("userId") Long userId, @Param("status") TripStatus status);
 
-    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, created_at, updated_at " +
+    @Select("SELECT id, user_id, trip_status_id, visibility, title, start_date, end_date, location_summary, created_at, updated_at " +
             "FROM trip WHERE id = #{tripId}")
     @Results({
             @Result(property = "userId", column = "user_id"),
@@ -52,6 +54,7 @@ public interface TripMapper {
             @Result(property = "visibility", column = "visibility", javaType = TripVisibility.class, typeHandler = EnumTypeHandler.class),
             @Result(property = "startDate", column = "start_date"),
             @Result(property = "endDate", column = "end_date"),
+            @Result(property = "locationSummary", column = "location_summary"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })

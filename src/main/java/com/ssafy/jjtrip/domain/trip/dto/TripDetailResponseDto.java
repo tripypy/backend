@@ -14,6 +14,7 @@ public record TripDetailResponseDto(
     LocalDate endDate,
     TripStatus status,
     TripVisibility visibility,
+    String locationSummary,
     List<TripItemResponseDto> tripItems
 ) {
     public static TripDetailResponseDto from(Trip entity) {
@@ -28,6 +29,7 @@ public record TripDetailResponseDto(
                 entity.getEndDate(),
                 entity.getStatus(),
                 entity.getVisibility(),
+                entity.getLocationSummary(),
                 itemDtos
         );
     }
