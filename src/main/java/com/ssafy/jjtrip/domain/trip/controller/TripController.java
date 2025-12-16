@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -62,10 +63,12 @@ public class TripController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @PutMapping("/{tripId}")
-    public ResponseEntity<?> updateTrip(@PathVariable Long tripId,
-                                           @Valid @RequestBody TripUpdateRequestDto requestDto,
-                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+    @PatchMapping("/{tripId}")
+    public ResponseEntity<Void> updateTrip(
+            @PathVariable Long tripId,
+            @RequestBody TripUpdateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
         tripService.updateTrip(tripId, requestDto, userDetails.getUser().getId());
         return ResponseEntity.ok().build();
     }

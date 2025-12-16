@@ -94,13 +94,23 @@ public interface TripMapper {
     })
     List<TripItem> selectItemsWithSpotsByTripId(Long tripId);
 
-    @Update("UPDATE trip SET " +
-            "title = #{title}, " +
-            "start_date = #{startDate}, " +
-            "end_date = #{endDate}, " +
-            "trip_status_id = #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler}, " +
-            "visibility = #{visibility, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, " +
-            "WHERE id = #{id}")
+    @Update("""
+        <script>
+        UPDATE trip
+        <set>
+          <if test="title != null">title = #{title},</if>
+          <if test="startDate != null">start_date = #{startDate},</if>
+          <if test="endDate != null">end_date = #{endDate},</if>
+          <if test="status != null">
+            trip_status_id = #{status, typeHandler=com.ssafy.jjtrip.domain.trip.mapper.TripStatusIdTypeHandler},
+          </if>
+          <if test="visibility != null">
+            visibility = #{visibility, typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+          </if>
+        </set>
+        WHERE id = #{id}
+        </script>
+    """)
     void update(Trip trip);
 
     @Delete("DELETE FROM trip WHERE id = #{tripId}")

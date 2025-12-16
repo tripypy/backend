@@ -80,11 +80,12 @@ public class TripService {
     public void updateTrip(Long tripId, TripUpdateRequestDto requestDto, Long userId) {
         Trip trip = getTripForModification(tripId, userId);
 
-        trip.setTitle(requestDto.title());
-        trip.setStartDate(requestDto.startDate());
-        trip.setEndDate(requestDto.endDate());
-        trip.setStatus(requestDto.status());
-        trip.setVisibility(requestDto.visibility());
+        if (requestDto.title() != null) trip.setTitle(requestDto.title());
+        if (requestDto.startDate() != null) trip.setStartDate(requestDto.startDate());
+        if (requestDto.endDate() != null) trip.setEndDate(requestDto.endDate());
+        if (requestDto.status() != null) trip.setStatus(requestDto.status());
+        if (requestDto.visibility() != null) trip.setVisibility(requestDto.visibility());
+
         tripMapper.update(trip);
     }
 
