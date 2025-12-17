@@ -71,6 +71,20 @@ CREATE TABLE `friendship` (
   CONSTRAINT `chk_friendship_order` CHECK (`user_id_a` < `user_id_b`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 친구 요청 (Friend Request)
+CREATE TABLE `friend_request` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `requester_id` BIGINT NOT NULL COMMENT '요청 보낸 사용자 ID',
+  `receiver_id`  BIGINT NOT NULL COMMENT '요청 받는 사용자 ID',
+  `status`       VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT "'PENDING', 'ACCEPTED', 'DECLINED'",
+  `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_friend_request` (`requester_id`, `receiver_id`),
+  CONSTRAINT `fk_request_requester` FOREIGN KEY (`requester_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_request_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ==========================================
 -- 🏢 2. 장소 (Spot Domain)
 -- ==========================================
