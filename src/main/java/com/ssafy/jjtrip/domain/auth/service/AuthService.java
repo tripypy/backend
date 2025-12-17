@@ -11,7 +11,6 @@ import com.ssafy.jjtrip.domain.user.entity.Role;
 import com.ssafy.jjtrip.domain.user.entity.User;
 import com.ssafy.jjtrip.domain.user.entity.UserStatus;
 import com.ssafy.jjtrip.domain.user.mapper.UserMapper;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,7 +28,6 @@ public class AuthService {
 
     private static final String REDIS_REFRESH_TOKEN_PREFIX = "RefreshToken:";
     private static final String REDIS_BLACKLIST_PREFIX = "BlackList:";
-    private static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
@@ -69,7 +67,6 @@ public class AuthService {
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
-        validatePassword(signupRequestDto.password());
         validateDuplicateEmail(signupRequestDto.email());
         validateDuplicateNickname(signupRequestDto.nickname());
         User user = buildNewUser(signupRequestDto);
@@ -108,12 +105,6 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(authentication);
         String refreshToken = jwtTokenProvider.generateRefreshToken(authentication);
         return new TokenInfo(accessToken, refreshToken, accessTokenExpireTimeMs);
-    }
-
-    private void validatePassword(String password) {
-        if (!Pattern.matches(PASSWORD_PATTERN, password)) {
-            throw new AuthException(AuthErrorCode.INVALID_PASSWORD_FORMAT);
-        }
     }
 
     private void validateDuplicateEmail(String email) {
