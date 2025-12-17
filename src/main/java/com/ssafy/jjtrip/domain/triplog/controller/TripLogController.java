@@ -3,7 +3,6 @@ package com.ssafy.jjtrip.domain.triplog.controller;
 import com.ssafy.jjtrip.common.dto.SliceDto;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogService;

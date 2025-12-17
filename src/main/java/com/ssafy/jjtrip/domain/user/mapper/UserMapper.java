@@ -3,7 +3,6 @@ package com.ssafy.jjtrip.domain.user.mapper;
 import com.ssafy.jjtrip.domain.user.dto.response.UserAndProfileDto;
 import com.ssafy.jjtrip.domain.user.entity.Role;
 import com.ssafy.jjtrip.domain.user.entity.User;
-import com.ssafy.jjtrip.domain.user.entity.UserProfile;
 import com.ssafy.jjtrip.domain.user.entity.UserStatus;
 import org.apache.ibatis.annotations.*;
 
