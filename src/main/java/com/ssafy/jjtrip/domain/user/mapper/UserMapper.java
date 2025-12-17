@@ -136,4 +136,13 @@ public interface UserMapper {
 
     @Update("UPDATE user_profile SET travel_style_summary = #{summary} WHERE user_id = #{userId}")
     void updateTravelStyleSummary(@Param("userId") Long userId, @Param("summary") String summary);
+
+    @Select("SELECT id, nickname, profile_image_url " +
+            "FROM user WHERE nickname LIKE CONCAT('%', #{nickname}, '%')")
+    @Results({
+            @Result(property = "id", column = "id"),
+            @Result(property = "nickname", column = "nickname"),
+            @Result(property = "profileImageUrl", column = "profile_image_url")
+    })
+    List<User> findByNicknameContaining(@Param("nickname") String nickname);
 }
