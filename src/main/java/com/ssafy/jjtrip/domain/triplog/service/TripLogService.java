@@ -1,19 +1,27 @@
 package com.ssafy.jjtrip.domain.triplog.service;
 
 import com.ssafy.jjtrip.common.dto.SliceDto;
-import com.ssafy.jjtrip.domain.triplog.dto.*;
+import com.ssafy.jjtrip.domain.trip.service.TripService;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogErrorCode;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogException;
 import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +29,25 @@ import java.util.stream.Collectors;
 public class TripLogService {
 
     private final TripLogMapper tripLogMapper;
+    private final TripService tripService;
+
+    @Transactional
+    public TripLogCreateResponseDto createTripLog(Long userId, TripLogCreateRequestDto requestDto) {
+        tripService.validateTripExists(requestDto.tripId());
+
+        if (tripLogMapper.existsByTripId(requestDto.tripId())) {
+            throw new TripLogException(TripLogErrorCode.TRIPLOG_ALREADY_EXISTS);
+        }
+
+        TripLog tripLog = TripLog.builder()
+                .tripId(requestDto.tripId())
+                .title(requestDto.title())
+                .content(requestDto.content())
+                .build();
+
+        tripLogMapper.insertTripLog(tripLog);
+        return new TripLogCreateResponseDto(tripLog.getId());
+    }
 
     public SliceDto<TripLogFeedResponseDto> getTripLogFeed(Long cursor, int limit, Long memberId) {
         final int queryLimit = limit + 1;

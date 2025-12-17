@@ -141,4 +141,10 @@ public class TripService {
             throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
         }
     }
+
+    public void validateTripExists(Long tripId) {
+        if (tripMapper.selectById(tripId).isEmpty()) {
+            throw new TripException(TripErrorCode.TRIP_NOT_FOUND);
+        }
+    }
 }

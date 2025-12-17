@@ -15,6 +15,18 @@ import java.util.Optional;
 public interface TripLogMapper {
 
     record ImageInfo(Long logId, String imageRefKey, String imageUrl, int orderIndex) {}
+    record LogImageInsertInfo(Long logId, Long userId, String imageUrl, int orderIndex, String imageRefKey) {}
+
+    @Insert("INSERT INTO trip_log (trip_id, title, content) VALUES (#{tripId}, #{title}, #{content})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insertTripLog(com.ssafy.jjtrip.domain.triplog.entity.TripLog tripLog);
+
+    @Insert("INSERT INTO log_image (log_id, user_id, image_url, order_index, image_ref_key) " +
+            "VALUES (#{logId}, #{userId}, #{imageUrl}, #{orderIndex}, #{imageRefKey})")
+    void insertTripLogImage(LogImageInsertInfo imageInfo);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM trip_log WHERE trip_id = #{tripId})")
+    boolean existsByTripId(Long tripId);
 
     @Select("""
             <script>

@@ -3,16 +3,24 @@ package com.ssafy.jjtrip.domain.triplog.controller;
 import com.ssafy.jjtrip.common.dto.SliceDto;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogService;
 import jakarta.validation.Valid;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,6 +28,15 @@ import java.net.URI;
 public class TripLogController {
 
     private final TripLogService tripLogService;
+
+    @PostMapping
+    public ResponseEntity<TripLogCreateResponseDto> createTripLog(
+            @Valid @RequestBody TripLogCreateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        TripLogCreateResponseDto response = tripLogService.createTripLog(userDetails.getUser().getId(), requestDto);
+        return ResponseEntity.created(URI.create("/trip-logs/" + response.logId())).body(response);
+    }
 
     @GetMapping("/feed")
     public ResponseEntity<SliceDto<TripLogFeedResponseDto>> getTripLogFeed(
