@@ -3,19 +3,28 @@ package com.ssafy.jjtrip.domain.user.controller;
 import com.ssafy.jjtrip.common.s3.exception.FileErrorCode;
 import com.ssafy.jjtrip.common.s3.exception.FileException;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
+import com.ssafy.jjtrip.domain.user.dto.AiTravelAnalysisDto;
 import com.ssafy.jjtrip.domain.user.dto.request.UpdateUserRequestDto;
-import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.ProfileImageUpdateResponseDto;
+import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserProfileResponseDto;
+import com.ssafy.jjtrip.domain.user.service.AiAnalysisService;
 import com.ssafy.jjtrip.domain.user.service.UserService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/users")
@@ -23,6 +32,8 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+
+    private final AiAnalysisService aiAnalysisService;
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponseDto> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -40,6 +51,12 @@ public class UserController {
     public ResponseEntity<Void> updateUserProfile(@AuthenticationPrincipal CustomUserDetails userDetails, @Valid @RequestBody UpdateUserRequestDto updateUserRequestDto) {
         userService.updateUserProfile(userDetails.getUser().getId(), updateUserRequestDto);
         return ResponseEntity.ok().build();
+    }
+    
+    @PostMapping("/me/analysis")
+    public ResponseEntity<AiTravelAnalysisDto> analyzeMyTravelStyle(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        AiTravelAnalysisDto result = aiAnalysisService.analyzeUserTravelStyle(userDetails.getUser().getId());
+        return ResponseEntity.ok(result);
     }
     
     @GetMapping("/{userId}/friends")

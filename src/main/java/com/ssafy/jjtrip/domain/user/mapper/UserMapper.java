@@ -133,4 +133,7 @@ public interface UserMapper {
             @Result(property = "friendsCount", column = "friends_count")
     })
     List<UserAndProfileDto> findFriendsByUserId(@Param("userId") Long userId);
+
+    @Update("UPDATE user_profile SET travel_style_summary = #{summary} WHERE user_id = #{userId}")
+    void updateTravelStyleSummary(@Param("userId") Long userId, @Param("summary") String summary);
 }
