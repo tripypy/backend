@@ -57,6 +57,9 @@ public interface UserMapper {
     })
     Optional<User> findById(Long id);
 
+    @Select("SELECT COUNT(1) > 0 FROM user WHERE id = #{id}")
+    boolean existsById(Long id);
+
     @Insert("INSERT INTO user (role_id, status_id, email, password_hash, nickname) " +
             "VALUES (#{user.role.id}, #{user.status.id}, #{user.email}, #{user.passwordHash}, #{user.nickname})")
     @Options(useGeneratedKeys = true, keyProperty = "user.id")

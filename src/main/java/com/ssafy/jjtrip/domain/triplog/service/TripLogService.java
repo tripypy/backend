@@ -17,6 +17,7 @@ import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogErrorCode;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogException;
 import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
+import com.ssafy.jjtrip.domain.user.service.UserValidateService;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TripLogService {
-
     private final TripLogMapper tripLogMapper;
+    private final UserValidateService userValidateService;
     private final TripService tripService;
 
     @Transactional
@@ -68,56 +69,20 @@ public class TripLogService {
             nextCursor = tripLogsData.get(tripLogsData.size() - 1).logId();
         }
 
-        List<TripLogFeedResponseDto> tripLogs;
-        if (tripLogsData.isEmpty()) {
-            tripLogs = Collections.emptyList();
-        } else {
-            List<Long> logIds = tripLogsData.stream().map(TripLogFeedResponseDto.FeedData::logId).toList();
-            List<TripLogMapper.ImageInfo> images = tripLogMapper.findImagesByLogIds(logIds);
-
-            Map<Long, List<TripLogImageResponseDto>> imagesByLogId = images.stream()
-                    .collect(Collectors.groupingBy(
-                            TripLogMapper.ImageInfo::logId,
-                            Collectors.mapping(
-                                    imageInfo -> new TripLogImageResponseDto(imageInfo.imageRefKey(), imageInfo.imageUrl(), imageInfo.orderIndex()),
-                                    Collectors.toList()
-                            )
-                    ));
-
-            tripLogs = tripLogsData.stream()
-                    .map(data -> TripLogFeedResponseDto.from(data, imagesByLogId.getOrDefault(data.logId(), Collections.emptyList())))
-                    .toList();
-        }
+        List<TripLogFeedResponseDto> tripLogs = mapToTripLogFeedResponse(tripLogsData);
 
         return new SliceDto<>(tripLogs, nextCursor, hasNext);
     }
 
     public PageDto<TripLogFeedResponseDto> getUserTripLogs(Long authorId, int page, int size, Long memberId) {
+        userValidateService.validateUserExists(authorId);
+
         int offset = (page - 1) * size;
         List<TripLogFeedResponseDto.FeedData> tripLogsData = tripLogMapper.findTripLogsByUserId(offset, size, memberId, authorId);
         long totalElements = tripLogMapper.countTripLogsByUserId(memberId, authorId);
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
-        List<TripLogFeedResponseDto> tripLogs;
-        if (tripLogsData.isEmpty()) {
-            tripLogs = Collections.emptyList();
-        } else {
-            List<Long> logIds = tripLogsData.stream().map(TripLogFeedResponseDto.FeedData::logId).toList();
-            List<TripLogMapper.ImageInfo> images = tripLogMapper.findImagesByLogIds(logIds);
-
-            Map<Long, List<TripLogImageResponseDto>> imagesByLogId = images.stream()
-                    .collect(Collectors.groupingBy(
-                            TripLogMapper.ImageInfo::logId,
-                            Collectors.mapping(
-                                    imageInfo -> new TripLogImageResponseDto(imageInfo.imageRefKey(), imageInfo.imageUrl(), imageInfo.orderIndex()),
-                                    Collectors.toList()
-                            )
-                    ));
-
-            tripLogs = tripLogsData.stream()
-                    .map(data -> TripLogFeedResponseDto.from(data, imagesByLogId.getOrDefault(data.logId(), Collections.emptyList())))
-                    .toList();
-        }
+        List<TripLogFeedResponseDto> tripLogs = mapToTripLogFeedResponse(tripLogsData);
 
         return new PageDto<>(tripLogs, page, size, totalElements, totalPages);
     }
@@ -176,5 +141,27 @@ public class TripLogService {
         tripLogMapper.deleteLike(logId, userId);
         int likeCount = tripLogMapper.getLikeCount(logId);
         return new TripLogLikeResponseDto(false, likeCount);
+    }
+
+    private List<TripLogFeedResponseDto> mapToTripLogFeedResponse(List<TripLogFeedResponseDto.FeedData> tripLogsData) {
+        if (tripLogsData.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> logIds = tripLogsData.stream().map(TripLogFeedResponseDto.FeedData::logId).toList();
+        List<TripLogMapper.ImageInfo> images = tripLogMapper.findImagesByLogIds(logIds);
+
+        Map<Long, List<TripLogImageResponseDto>> imagesByLogId = images.stream()
+                .collect(Collectors.groupingBy(
+                        TripLogMapper.ImageInfo::logId,
+                        Collectors.mapping(
+                                imageInfo -> new TripLogImageResponseDto(imageInfo.imageRefKey(), imageInfo.imageUrl(), imageInfo.orderIndex()),
+                                Collectors.toList()
+                        )
+                ));
+
+        return tripLogsData.stream()
+                .map(data -> TripLogFeedResponseDto.from(data, imagesByLogId.getOrDefault(data.logId(), Collections.emptyList())))
+                .toList();
     }
 }
