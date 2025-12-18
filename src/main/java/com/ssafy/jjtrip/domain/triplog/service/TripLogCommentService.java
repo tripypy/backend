@@ -7,6 +7,8 @@ import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogErrorCode;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogException;
 import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,7 @@ public class TripLogCommentService {
 
     @Transactional
     public void addComment(Long logId, Long userId, TripLogCommentRequestDto commentRequestDto) {
-        validateCommentRequest(logId, commentRequestDto.parentId());
+        validateAddCommentRequest(logId, commentRequestDto.parentId());
 
         TripLogComment comment = TripLogComment.builder()
                 .logId(logId)
@@ -35,18 +37,15 @@ public class TripLogCommentService {
 
     @Transactional
     public void updateComment(Long userId, Long commentId, String content) {
-        validateCommentAuthor(userId, commentId);
-
-        if (tripLogMapper.isCommentDeleted(commentId).orElse(false)) {
-            throw new TripLogException(TripLogErrorCode.COMMENT_NOT_FOUND);
-        }
+        validateCommentOwnership(userId, commentId);
+        validateCommentNotDeleted(commentId);
 
         tripLogMapper.updateComment(commentId, content);
     }
 
     @Transactional
     public void deleteComment(Long userId, Long commentId) {
-        validateCommentAuthor(userId, commentId);
+        validateCommentOwnership(userId, commentId);
 
         if (tripLogMapper.hasReplies(commentId)) {
             tripLogMapper.softDeleteComment(commentId);
@@ -64,26 +63,27 @@ public class TripLogCommentService {
         return tripLogMapper.getCommentCount(logId);
     }
 
-    private void validateCommentRequest(Long logId, Long parentId) {
+    private void validateAddCommentRequest(Long logId, Long parentId) {
         if (!tripLogMapper.existsById(logId)) {
             throw new TripLogException(TripLogErrorCode.LOG_NOT_FOUND);
         }
-
         if (parentId != null) {
-            Long parentLogId = tripLogMapper.findLogIdByCommentId(parentId)
-                    .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
-
-            if (!parentLogId.equals(logId)) {
-                throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
-            }
-
-            if (tripLogMapper.isCommentDeleted(parentId).orElse(false)) {
-                throw new TripLogException(TripLogErrorCode.COMMENT_NOT_FOUND);
-            }
+            validateParentComment(logId, parentId);
         }
     }
 
-    private void validateCommentAuthor(Long userId, Long commentId) {
+    private void validateParentComment(Long logId, Long parentId) {
+        Long parentLogId = tripLogMapper.findLogIdByCommentId(parentId)
+                .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
+
+        if (!parentLogId.equals(logId)) {
+            throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
+        }
+        
+        validateCommentNotDeleted(parentId);
+    }
+
+    private void validateCommentOwnership(Long userId, Long commentId) {
         Long authorId = tripLogMapper.findCommentAuthorId(commentId)
                 .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
 
@@ -92,47 +92,55 @@ public class TripLogCommentService {
         }
     }
 
-    private List<TripLogCommentResponseDto> organizeComments(List<TripLogCommentFlatDto> flatComments) {
-        Map<Long, TripLogCommentResponseDto> dtoMap = convertToDtoMap(flatComments);
-        return buildHierarchy(flatComments, dtoMap);
+    private void validateCommentNotDeleted(Long commentId) {
+        if (tripLogMapper.isCommentDeleted(commentId).orElse(false)) {
+            throw new TripLogException(TripLogErrorCode.COMMENT_NOT_FOUND);
+        }
     }
 
-    private Map<Long, TripLogCommentResponseDto> convertToDtoMap(List<TripLogCommentFlatDto> flatComments) {
-        Map<Long, TripLogCommentResponseDto> dtoMap = new java.util.HashMap<>();
-        for (TripLogCommentFlatDto flat : flatComments) {
-            String content = flat.isDeleted() ? "삭제된 댓글입니다." : flat.content();
-            String authorNickname = flat.isDeleted() ? "(삭제)" : flat.authorNickname();
-            String authorImageUrl = flat.isDeleted() ? null : flat.authorImageUrl();
+    private List<TripLogCommentResponseDto> organizeComments(List<TripLogCommentFlatDto> flatComments) {
+        Map<Long, TripLogCommentResponseDto> dtoMap = new HashMap<>();
+        List<TripLogCommentResponseDto> roots = new ArrayList<>();
 
-            TripLogCommentResponseDto dto = new TripLogCommentResponseDto(
-                    flat.commentId(),
-                    authorNickname,
-                    authorImageUrl,
-                    content,
-                    flat.parentId(),
-                    flat.createdAt(),
-                    new java.util.ArrayList<>()
-            );
+        for (TripLogCommentFlatDto flat : flatComments) {
+            TripLogCommentResponseDto dto = convertToResponseDto(flat);
             dtoMap.put(flat.commentId(), dto);
         }
-        return dtoMap;
-    }
 
-    private List<TripLogCommentResponseDto> buildHierarchy(List<TripLogCommentFlatDto> flatComments, Map<Long, TripLogCommentResponseDto> dtoMap) {
-        List<TripLogCommentResponseDto> roots = new java.util.ArrayList<>();
         for (TripLogCommentFlatDto flat : flatComments) {
             TripLogCommentResponseDto currentDto = dtoMap.get(flat.commentId());
+
             if (flat.parentId() == null) {
                 roots.add(currentDto);
             } else {
-                TripLogCommentResponseDto parentDto = dtoMap.get(flat.parentId());
-                if (parentDto != null) {
-                    parentDto.replies().add(currentDto);
-                } else {
-                    throw new TripLogException(TripLogErrorCode.DATA_INTEGRITY_ERROR);
-                }
+                linkToParent(flat.parentId(), currentDto, dtoMap);
             }
         }
         return roots;
+    }
+
+    private TripLogCommentResponseDto convertToResponseDto(TripLogCommentFlatDto flat) {
+        boolean isDeleted = flat.isDeleted();
+        String content = isDeleted ? "삭제된 댓글입니다." : flat.content();
+        String authorNickname = isDeleted ? "(삭제)" : flat.authorNickname();
+        String authorImageUrl = isDeleted ? null : flat.authorImageUrl();
+
+        return new TripLogCommentResponseDto(
+                flat.commentId(),
+                authorNickname,
+                authorImageUrl,
+                content,
+                flat.parentId(),
+                flat.createdAt(),
+                new ArrayList<>()
+        );
+    }
+
+    private void linkToParent(Long parentId, TripLogCommentResponseDto child, Map<Long, TripLogCommentResponseDto> dtoMap) {
+        TripLogCommentResponseDto parent = dtoMap.get(parentId);
+        if (parent == null) {
+            throw new TripLogException(TripLogErrorCode.DATA_INTEGRITY_ERROR);
+        }
+        parent.replies().add(child);
     }
 }
