@@ -161,6 +161,7 @@ CREATE TABLE `trip_log` (
   `trip_id`          BIGINT NOT NULL,
   `title`            VARCHAR(255) NOT NULL,
   `content`          TEXT COMMENT '마크다운 형식 본문. 이미지는 {{img_key}} 형태의 참조 키 사용',
+  `visibility`       VARCHAR(20) NOT NULL DEFAULT 'PUBLIC' COMMENT "'PUBLIC' 또는 'PRIVATE'",
   `created_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

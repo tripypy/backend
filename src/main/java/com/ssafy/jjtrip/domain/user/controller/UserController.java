@@ -49,7 +49,7 @@ public class UserController {
     }
 
     @PostMapping("/profile-image")
-    public ResponseEntity<ProfileImageUpdateResponseDto> updateUserProfileImage(
+    public ResponseEntity<ProfileImageUpdateResponseDto> updateProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam("image") MultipartFile image) {
 
@@ -57,15 +57,14 @@ public class UserController {
             throw new FileException(FileErrorCode.EMPTY_FILE);
         }
 
-        String newImageUrl = userService.updateUserProfileImage(userDetails.getUser().getId(), image);
+        ProfileImageUpdateResponseDto response = userService.updateProfileImage(userDetails.getUser().getId(), image);
 
-        ProfileImageUpdateResponseDto response = new ProfileImageUpdateResponseDto(newImageUrl);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/profile-image")
-    public ResponseEntity<Void> deleteUserProfileImage(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        userService.deleteUserProfileImage(userDetails.getUser().getId());
+    public ResponseEntity<Void> deleteProfileImage(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.deleteProfileImage(userDetails.getUser().getId());
         return ResponseEntity.noContent().build();
     }
 }

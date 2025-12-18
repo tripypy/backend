@@ -3,7 +3,6 @@ package com.ssafy.jjtrip.domain.user.mapper;
 import com.ssafy.jjtrip.domain.user.dto.response.UserAndProfileDto;
 import com.ssafy.jjtrip.domain.user.entity.Role;
 import com.ssafy.jjtrip.domain.user.entity.User;
-import com.ssafy.jjtrip.domain.user.entity.UserProfile;
 import com.ssafy.jjtrip.domain.user.entity.UserStatus;
 import org.apache.ibatis.annotations.*;
 
@@ -57,6 +56,9 @@ public interface UserMapper {
             @Result(property = "updatedAt", column = "updated_at")
     })
     Optional<User> findById(Long id);
+
+    @Select("SELECT COUNT(1) > 0 FROM user WHERE id = #{id}")
+    boolean existsById(Long id);
 
     @Insert("INSERT INTO user (role_id, status_id, email, password_hash, nickname) " +
             "VALUES (#{user.role.id}, #{user.status.id}, #{user.email}, #{user.passwordHash}, #{user.nickname})")

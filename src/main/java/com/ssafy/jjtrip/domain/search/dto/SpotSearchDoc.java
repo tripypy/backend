@@ -2,7 +2,6 @@ package com.ssafy.jjtrip.domain.search.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.elasticsearch.annotations.Document;
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Document(indexName = "trit_spot")

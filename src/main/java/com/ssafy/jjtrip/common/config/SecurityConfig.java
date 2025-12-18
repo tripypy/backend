@@ -3,7 +3,6 @@ package com.ssafy.jjtrip.common.config;
 import com.ssafy.jjtrip.common.security.JwtAuthenticationEntryPoint;
 import com.ssafy.jjtrip.common.security.JwtAuthenticationFilter;
 import com.ssafy.jjtrip.common.security.JwtExceptionFilter;
-import com.ssafy.jjtrip.common.security.JwtTokenProvider;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +27,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtTokenProvider jwtTokenProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtExceptionFilter jwtExceptionFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;

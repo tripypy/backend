@@ -2,7 +2,6 @@ package com.ssafy.jjtrip.common.security;
 
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
 import com.ssafy.jjtrip.domain.auth.exception.AuthException;
-import com.ssafy.jjtrip.domain.auth.service.CustomUserDetailsService;
 import com.ssafy.jjtrip.domain.user.entity.Role;
 import com.ssafy.jjtrip.domain.user.entity.User;
 import com.ssafy.jjtrip.domain.user.entity.UserStatus;
@@ -24,7 +23,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 @Slf4j

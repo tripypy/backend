@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.triplog.dto;
 
+import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public record TripLogDetailResponseDto(
         LocalDateTime createdAt,
         String authorNickname,
         String authorImageUrl,
+        TripLogVisibility visibility,
         Long tripId,
         String tripTitle,
         List<TripLogImageResponseDto> images,
@@ -24,8 +26,10 @@ public record TripLogDetailResponseDto(
             String content,
             String locationSummary,
             LocalDateTime createdAt,
+            Long authorId,
             String authorNickname,
             String authorImageUrl,
+            TripLogVisibility visibility,
             Long tripId,
             String tripTitle
     ) {}
@@ -45,6 +49,7 @@ public record TripLogDetailResponseDto(
                 baseInfo.createdAt(),
                 baseInfo.authorNickname(),
                 baseInfo.authorImageUrl(),
+                baseInfo.visibility(),
                 baseInfo.tripId(),
                 baseInfo.tripTitle(),
                 images,
