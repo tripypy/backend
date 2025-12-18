@@ -147,4 +147,38 @@ public class TripService {
             throw new TripException(TripErrorCode.TRIP_NOT_FOUND);
         }
     }
+
+    @Transactional
+    public Long scrapTrip(Long tripId, Long userId) {
+        Trip sourceTrip = getValidatedSourceTrip(tripId, userId);
+        Trip newTrip = Trip.createScrap(sourceTrip, userId);
+        
+        tripMapper.insert(newTrip);
+        copyTripItems(tripId, newTrip.getId());
+        locationSummaryService.updateLocationSummary(newTrip.getId());
+        
+        return newTrip.getId();
+    }
+
+    private Trip getValidatedSourceTrip(Long tripId, Long userId) {
+        Trip trip = tripMapper.selectById(tripId)
+                .orElseThrow(() -> new TripException(TripErrorCode.TRIP_NOT_FOUND));
+
+        if (trip.getVisibility() == TripVisibility.PRIVATE && !trip.getUserId().equals(userId)) {
+            throw new TripException(TripErrorCode.FORBIDDEN_TRIP_ACCESS);
+        }
+        return trip;
+    }
+
+    private void copyTripItems(Long sourceTripId, Long newTripId) {
+        List<TripItem> sourceItems = tripMapper.selectItemsWithSpotsByTripId(sourceTripId);
+        for (TripItem item : sourceItems) {
+            tripMapper.insertTripItem(
+                    newTripId,
+                    item.getSpot().getId(), 
+                    item.getDayNumber(),
+                    item.getOrderIndex()
+            );
+        }
+    }
 }
