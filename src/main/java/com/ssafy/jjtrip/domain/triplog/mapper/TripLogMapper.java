@@ -5,11 +5,18 @@ import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
-import org.apache.ibatis.annotations.*;
-
+import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.apache.ibatis.annotations.Arg;
+import org.apache.ibatis.annotations.ConstructorArgs;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface TripLogMapper {
@@ -17,7 +24,7 @@ public interface TripLogMapper {
     record ImageInfo(Long logId, String imageRefKey, String imageUrl, int orderIndex) {}
     record LogImageInsertInfo(Long logId, Long userId, String imageUrl, int orderIndex, String imageRefKey) {}
 
-    @Insert("INSERT INTO trip_log (trip_id, title, content) VALUES (#{tripId}, #{title}, #{content})")
+    @Insert("INSERT INTO trip_log (trip_id, title, content, visibility) VALUES (#{tripId}, #{title}, #{content}, #{visibility})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertTripLog(com.ssafy.jjtrip.domain.triplog.entity.TripLog tripLog);
 
@@ -57,6 +64,7 @@ public interface TripLogMapper {
                 <if test="cursor != null">
                     tl.id &lt; #{cursor}
                 </if>
+                AND tl.visibility = 'PUBLIC'
             </where>
             ORDER BY
                 tl.id DESC
@@ -64,6 +72,48 @@ public interface TripLogMapper {
             </script>
             """)
     List<TripLogFeedResponseDto.FeedData> findTripLogFeed(@Param("cursor") Long cursor, @Param("limit") int limit, @Param("memberId") Long memberId);
+
+    @Select("""
+            <script>
+            SELECT
+                tl.id as logId,
+                u.id as authorId,
+                u.nickname as authorNickname,
+                u.profile_image_url as authorImageUrl,
+                tl.title,
+                tl.content,
+                t.location_summary as locationSummary,
+                (SELECT COUNT(*) FROM log_like ll WHERE ll.log_id = tl.id) as likeCount,
+                (SELECT COUNT(*) FROM log_comment lc WHERE lc.log_id = tl.id) as commentCount,
+                <if test="memberId != null">
+                    EXISTS(SELECT 1 FROM log_like ll WHERE ll.log_id = tl.id AND ll.user_id = #{memberId}) as liked,
+                </if>
+                <if test="memberId == null">
+                    0 as liked,
+                </if>
+                tl.created_at as createdAt
+            FROM
+                trip_log tl
+            JOIN
+                trip t ON tl.trip_id = t.id
+            JOIN
+                user u ON t.user_id = u.id
+            <where>
+                <if test="cursor != null">
+                    tl.id &lt; #{cursor}
+                </if>
+                AND u.id = #{authorId}
+                AND (
+                    tl.visibility = 'PUBLIC'
+                    OR (#{memberId} != null AND #{memberId} = #{authorId})
+                )
+            </where>
+            ORDER BY
+                tl.id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+    List<TripLogFeedResponseDto.FeedData> findTripLogsByUserId(@Param("cursor") Long cursor, @Param("limit") int limit, @Param("memberId") Long memberId, @Param("authorId") Long authorId);
 
     @Select("""
             <script>
@@ -93,6 +143,7 @@ public interface TripLogMapper {
             "tl.created_at as createdAt, " +
             "u.nickname as authorNickname, " +
             "u.profile_image_url as authorImageUrl, " +
+            "tl.visibility as visibility, " +
             "t.id as tripId, " +
             "t.title as tripTitle " +
             "FROM trip_log tl " +
@@ -107,6 +158,7 @@ public interface TripLogMapper {
             @Arg(column = "createdAt", javaType = LocalDateTime.class),
             @Arg(column = "authorNickname", javaType = String.class),
             @Arg(column = "authorImageUrl", javaType = String.class),
+            @Arg(column = "visibility", javaType = TripLogVisibility.class),
             @Arg(column = "tripId", javaType = Long.class),
             @Arg(column = "tripTitle", javaType = String.class)
     })

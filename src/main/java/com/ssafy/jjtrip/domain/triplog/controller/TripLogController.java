@@ -51,6 +51,17 @@ public class TripLogController {
         return ResponseEntity.created(URI.create("/trip-logs/" + response.logId())).body(response);
     }
 
+    @GetMapping
+    public ResponseEntity<SliceDto<TripLogFeedResponseDto>> getUserTripLogs(
+            @RequestParam Long userId,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int limit,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        final Long memberId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        return ResponseEntity.ok(tripLogService.getUserTripLogs(userId, cursor, limit, memberId));
+    }
+
     @GetMapping("/feed")
     public ResponseEntity<SliceDto<TripLogFeedResponseDto>> getTripLogFeed(
             @RequestParam(required = false) Long cursor,

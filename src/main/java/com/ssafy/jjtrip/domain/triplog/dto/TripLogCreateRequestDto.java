@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.triplog.dto;
 
+import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,6 +15,8 @@ public record TripLogCreateRequestDto(
         String title,
 
         @NotBlank(message = "내용은 필수입니다.")
-        String content
+        String content,
+
+        TripLogVisibility visibility
 ) {
 }

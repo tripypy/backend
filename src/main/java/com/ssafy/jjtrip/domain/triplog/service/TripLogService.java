@@ -12,6 +12,7 @@ import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogErrorCode;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogException;
 import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
@@ -39,10 +40,13 @@ public class TripLogService {
             throw new TripLogException(TripLogErrorCode.TRIPLOG_ALREADY_EXISTS);
         }
 
+        TripLogVisibility visibility = requestDto.visibility() == null ? TripLogVisibility.PUBLIC : requestDto.visibility();
+
         TripLog tripLog = TripLog.builder()
                 .tripId(requestDto.tripId())
                 .title(requestDto.title())
                 .content(requestDto.content())
+                .visibility(visibility)
                 .build();
 
         tripLogMapper.insertTripLog(tripLog);
@@ -52,6 +56,44 @@ public class TripLogService {
     public SliceDto<TripLogFeedResponseDto> getTripLogFeed(Long cursor, int limit, Long memberId) {
         final int queryLimit = limit + 1;
         List<TripLogFeedResponseDto.FeedData> tripLogsData = tripLogMapper.findTripLogFeed(cursor, queryLimit, memberId);
+
+        boolean hasNext = tripLogsData.size() > limit;
+        if (hasNext) {
+            tripLogsData.remove(limit);
+        }
+
+        Long nextCursor = null;
+        if (!tripLogsData.isEmpty()) {
+            nextCursor = tripLogsData.get(tripLogsData.size() - 1).logId();
+        }
+
+        List<TripLogFeedResponseDto> tripLogs;
+        if (tripLogsData.isEmpty()) {
+            tripLogs = Collections.emptyList();
+        } else {
+            List<Long> logIds = tripLogsData.stream().map(TripLogFeedResponseDto.FeedData::logId).toList();
+            List<TripLogMapper.ImageInfo> images = tripLogMapper.findImagesByLogIds(logIds);
+
+            Map<Long, List<TripLogImageResponseDto>> imagesByLogId = images.stream()
+                    .collect(Collectors.groupingBy(
+                            TripLogMapper.ImageInfo::logId,
+                            Collectors.mapping(
+                                    imageInfo -> new TripLogImageResponseDto(imageInfo.imageRefKey(), imageInfo.imageUrl(), imageInfo.orderIndex()),
+                                    Collectors.toList()
+                            )
+                    ));
+
+            tripLogs = tripLogsData.stream()
+                    .map(data -> TripLogFeedResponseDto.from(data, imagesByLogId.getOrDefault(data.logId(), Collections.emptyList())))
+                    .toList();
+        }
+
+        return new SliceDto<>(tripLogs, nextCursor, hasNext);
+    }
+
+    public SliceDto<TripLogFeedResponseDto> getUserTripLogs(Long authorId, Long cursor, int limit, Long memberId) {
+        final int queryLimit = limit + 1;
+        List<TripLogFeedResponseDto.FeedData> tripLogsData = tripLogMapper.findTripLogsByUserId(cursor, queryLimit, memberId, authorId);
 
         boolean hasNext = tripLogsData.size() > limit;
         if (hasNext) {
