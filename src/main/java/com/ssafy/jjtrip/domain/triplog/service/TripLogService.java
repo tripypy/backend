@@ -88,9 +88,15 @@ public class TripLogService {
         return new PageDto<>(tripLogs, page, size, totalElements, totalPages);
     }
 
-    public TripLogDetailResponseDto getTripLogDetail(Long logId) {
+    public TripLogDetailResponseDto getTripLogDetail(Long logId, Long memberId) {
         TripLogDetailResponseDto.BaseInfo baseInfo = tripLogMapper.findDetailById(logId)
                 .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
+
+        if (baseInfo.visibility() == TripLogVisibility.PRIVATE) {
+            if (memberId == null || !memberId.equals(baseInfo.authorId())) {
+                throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
+            }
+        }
 
         List<TripLogImageResponseDto> images = tripLogMapper.findImagesByLogId(logId);
         List<TripLogCommentResponseDto> comments = tripLogMapper.findCommentsByLogId(logId);

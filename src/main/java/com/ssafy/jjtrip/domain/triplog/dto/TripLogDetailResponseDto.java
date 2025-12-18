@@ -26,6 +26,7 @@ public record TripLogDetailResponseDto(
             String content,
             String locationSummary,
             LocalDateTime createdAt,
+            Long authorId,
             String authorNickname,
             String authorImageUrl,
             TripLogVisibility visibility,

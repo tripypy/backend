@@ -77,8 +77,12 @@ public class TripLogController {
     }
 
     @GetMapping("/{logId}")
-    public ResponseEntity<?> getTripLogDetail(@PathVariable Long logId) {
-        return ResponseEntity.ok(tripLogService.getTripLogDetail(logId));
+    public ResponseEntity<?> getTripLogDetail(
+            @PathVariable Long logId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        final Long memberId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        return ResponseEntity.ok(tripLogService.getTripLogDetail(logId, memberId));
     }
 
     @PatchMapping("/{logId}")
