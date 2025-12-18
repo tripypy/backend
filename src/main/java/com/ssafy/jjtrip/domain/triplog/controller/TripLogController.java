@@ -1,12 +1,15 @@
 package com.ssafy.jjtrip.domain.triplog.controller;
 
 import com.ssafy.jjtrip.common.dto.SliceDto;
+import com.ssafy.jjtrip.common.s3.dto.PresignedUrlResponseDto;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
+import com.ssafy.jjtrip.domain.triplog.dto.ImageUploadRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
+import com.ssafy.jjtrip.domain.triplog.service.TripLogImageService;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -28,6 +31,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class TripLogController {
 
     private final TripLogService tripLogService;
+    private final TripLogImageService tripLogImageService;
+
+    @PostMapping("/images/presigned-url")
+    public ResponseEntity<PresignedUrlResponseDto> generatePresignedUrl(
+            @Valid @RequestBody ImageUploadRequestDto imageUploadRequest,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        PresignedUrlResponseDto response = tripLogImageService.generatePresignedUrl(imageUploadRequest);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     public ResponseEntity<TripLogCreateResponseDto> createTripLog(

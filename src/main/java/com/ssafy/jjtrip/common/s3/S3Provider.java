@@ -1,8 +1,10 @@
 package com.ssafy.jjtrip.common.s3;
 
+import com.ssafy.jjtrip.common.s3.dto.PresignedUrlResponseDto;
 import com.ssafy.jjtrip.common.s3.exception.FileErrorCode;
 import com.ssafy.jjtrip.common.s3.exception.FileException;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -12,6 +14,8 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @Component
 public class S3Provider {
@@ -19,15 +23,35 @@ public class S3Provider {
     private static final String URL_SEPARATOR = "/";
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
     private final String bucketName;
     private final String baseUrl;
 
     public S3Provider(S3Client s3Client,
+                      S3Presigner s3Presigner,
                       @Value("${spring.cloud.aws.s3.bucket}") String bucketName,
                       @Value("${file.base-url}") String baseUrl) {
         this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
         this.bucketName = bucketName;
         this.baseUrl = baseUrl;
+    }
+
+    public PresignedUrlResponseDto generatePresignedUrl(String prefix, String fileName) {
+        String key = createKey(prefix, fileName);
+
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(10))
+                .putObjectRequest(putObjectRequest)
+                .build();
+
+        String presignedUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
+        return new PresignedUrlResponseDto(presignedUrl);
     }
 
     public String upload(MultipartFile file, String prefix) {
