@@ -1,11 +1,10 @@
 package com.ssafy.jjtrip.domain.triplog.mapper;
 
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentFlatDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogSummaryDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCommentFlatDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogDetailResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogFeedResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogImageResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogSummaryDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import java.time.LocalDateTime;

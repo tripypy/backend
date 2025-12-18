@@ -1,4 +1,4 @@
-package com.ssafy.jjtrip.domain.triplog.dto;
+package com.ssafy.jjtrip.domain.triplog.dto.response;
 
 public record TripLogImageResponseDto(
         String imageRefKey,

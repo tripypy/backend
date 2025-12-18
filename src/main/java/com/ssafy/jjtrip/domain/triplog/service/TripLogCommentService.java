@@ -1,8 +1,8 @@
 package com.ssafy.jjtrip.domain.triplog.service;
 
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentFlatDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogCommentRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCommentFlatDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCommentResponseDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogErrorCode;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogException;

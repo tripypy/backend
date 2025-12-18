@@ -1,6 +1,6 @@
 package com.ssafy.jjtrip.domain.triplog.service;
 
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogLikeResponseDto;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogErrorCode;
 import com.ssafy.jjtrip.domain.triplog.exception.TripLogException;
 import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
