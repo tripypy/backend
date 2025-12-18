@@ -8,6 +8,7 @@ import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.ProfileImageUpdateResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,7 +37,7 @@ public class UserController {
     }
 
     @PatchMapping("/me")
-    public ResponseEntity<Void> updateUserProfile(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody UpdateUserRequestDto updateUserRequestDto) {
+    public ResponseEntity<Void> updateUserProfile(@AuthenticationPrincipal CustomUserDetails userDetails, @Valid @RequestBody UpdateUserRequestDto updateUserRequestDto) {
         userService.updateUserProfile(userDetails.getUser().getId(), updateUserRequestDto);
         return ResponseEntity.ok().build();
     }

@@ -4,6 +4,7 @@ import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogSummaryDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import java.time.LocalDateTime;
@@ -261,4 +262,10 @@ public interface TripLogMapper {
 
     @Delete("DELETE FROM trip_log WHERE id = #{logId}")
     void deleteTripLog(Long logId);
+    @Select("SELECT tl.id AS logId, tl.title, " +
+            "(SELECT tli.image_url FROM log_image tli WHERE tli.log_id = tl.id ORDER BY tli.order_index ASC LIMIT 1) AS thumbnailUrl " +
+            "FROM trip_log tl " +
+            "JOIN trip t ON tl.trip_id = t.id " +
+            "WHERE t.user_id = #{userId}")
+    List<TripLogSummaryDto> findSummariesByUserId(@Param("userId") Long userId);
 }
