@@ -1,6 +1,7 @@
 package com.ssafy.jjtrip.domain.spot.mapper;
 
 import com.ssafy.jjtrip.domain.spot.entity.Spot;
+import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -26,4 +27,15 @@ public interface SpotMapper {
         )
     """)
     boolean existsById(@Param("spotId") Long spotId);
+
+    @Select("""
+        SELECT s.id, s.kakao_place_id, s.name, s.address, s.category, s.lat, s.lng, 
+               s.place_url, s.thumbnail_url, s.review_count, s.average_rating, s.created_at
+        FROM spot s
+        JOIN trip_item ti ON s.id = ti.spot_id
+        GROUP BY s.id
+        ORDER BY COUNT(ti.id) DESC
+        LIMIT 10
+    """)
+    List<Spot> findTop10MostAdded();
 }
