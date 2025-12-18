@@ -156,6 +156,7 @@ public interface TripLogMapper {
             "tl.content, " +
             "t.location_summary as locationSummary, " +
             "tl.created_at as createdAt, " +
+            "u.id as authorId, " +
             "u.nickname as authorNickname, " +
             "u.profile_image_url as authorImageUrl, " +
             "tl.visibility as visibility, " +
@@ -171,6 +172,7 @@ public interface TripLogMapper {
             @Arg(column = "content", javaType = String.class),
             @Arg(column = "locationSummary", javaType = String.class),
             @Arg(column = "createdAt", javaType = LocalDateTime.class),
+            @Arg(column = "authorId", javaType = Long.class),
             @Arg(column = "authorNickname", javaType = String.class),
             @Arg(column = "authorImageUrl", javaType = String.class),
             @Arg(column = "visibility", javaType = TripLogVisibility.class),
@@ -256,4 +258,7 @@ public interface TripLogMapper {
             WHERE tl.id = #{logId}
             """)
     Optional<Long> findAuthorIdByLogId(Long logId);
+
+    @Delete("DELETE FROM trip_log WHERE id = #{logId}")
+    void deleteTripLog(Long logId);
 }

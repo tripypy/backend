@@ -91,6 +91,15 @@ public class TripLogController {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping("/{logId}")
+    public ResponseEntity<?> deleteTripLog(
+            @PathVariable Long logId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        tripLogService.deleteTripLog(logId, userDetails.getUser().getId());
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{logId}/comments")
     public ResponseEntity<?> addComment(
             @PathVariable Long logId,
