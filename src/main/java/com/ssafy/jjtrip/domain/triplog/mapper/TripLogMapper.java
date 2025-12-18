@@ -99,9 +99,6 @@ public interface TripLogMapper {
             JOIN
                 user u ON t.user_id = u.id
             <where>
-                <if test="cursor != null">
-                    tl.id &lt; #{cursor}
-                </if>
                 AND u.id = #{authorId}
                 AND (
                     tl.visibility = 'PUBLIC'
@@ -110,10 +107,27 @@ public interface TripLogMapper {
             </where>
             ORDER BY
                 tl.id DESC
-            LIMIT #{limit}
+            LIMIT #{limit} OFFSET #{offset}
             </script>
             """)
-    List<TripLogFeedResponseDto.FeedData> findTripLogsByUserId(@Param("cursor") Long cursor, @Param("limit") int limit, @Param("memberId") Long memberId, @Param("authorId") Long authorId);
+    List<TripLogFeedResponseDto.FeedData> findTripLogsByUserId(@Param("offset") int offset, @Param("limit") int limit, @Param("memberId") Long memberId, @Param("authorId") Long authorId);
+
+    @Select("""
+            <script>
+            SELECT COUNT(*)
+            FROM trip_log tl
+            JOIN trip t ON tl.trip_id = t.id
+            JOIN user u ON t.user_id = u.id
+            <where>
+                AND u.id = #{authorId}
+                AND (
+                    tl.visibility = 'PUBLIC'
+                    OR (#{memberId} != null AND #{memberId} = #{authorId})
+                )
+            </where>
+            </script>
+            """)
+    long countTripLogsByUserId(@Param("memberId") Long memberId, @Param("authorId") Long authorId);
 
     @Select("""
             <script>

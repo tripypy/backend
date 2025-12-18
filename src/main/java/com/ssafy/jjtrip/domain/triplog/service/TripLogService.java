@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.triplog.service;
 
+import com.ssafy.jjtrip.common.dto.PageDto;
 import com.ssafy.jjtrip.common.dto.SliceDto;
 import com.ssafy.jjtrip.domain.trip.service.TripService;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
@@ -91,19 +92,11 @@ public class TripLogService {
         return new SliceDto<>(tripLogs, nextCursor, hasNext);
     }
 
-    public SliceDto<TripLogFeedResponseDto> getUserTripLogs(Long authorId, Long cursor, int limit, Long memberId) {
-        final int queryLimit = limit + 1;
-        List<TripLogFeedResponseDto.FeedData> tripLogsData = tripLogMapper.findTripLogsByUserId(cursor, queryLimit, memberId, authorId);
-
-        boolean hasNext = tripLogsData.size() > limit;
-        if (hasNext) {
-            tripLogsData.remove(limit);
-        }
-
-        Long nextCursor = null;
-        if (!tripLogsData.isEmpty()) {
-            nextCursor = tripLogsData.get(tripLogsData.size() - 1).logId();
-        }
+    public PageDto<TripLogFeedResponseDto> getUserTripLogs(Long authorId, int page, int size, Long memberId) {
+        int offset = (page - 1) * size;
+        List<TripLogFeedResponseDto.FeedData> tripLogsData = tripLogMapper.findTripLogsByUserId(offset, size, memberId, authorId);
+        long totalElements = tripLogMapper.countTripLogsByUserId(memberId, authorId);
+        int totalPages = (int) Math.ceil((double) totalElements / size);
 
         List<TripLogFeedResponseDto> tripLogs;
         if (tripLogsData.isEmpty()) {
@@ -126,7 +119,7 @@ public class TripLogService {
                     .toList();
         }
 
-        return new SliceDto<>(tripLogs, nextCursor, hasNext);
+        return new PageDto<>(tripLogs, page, size, totalElements, totalPages);
     }
 
     public TripLogDetailResponseDto getTripLogDetail(Long logId) {

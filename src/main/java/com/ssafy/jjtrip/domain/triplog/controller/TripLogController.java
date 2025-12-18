@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.triplog.controller;
 
+import com.ssafy.jjtrip.common.dto.PageDto;
 import com.ssafy.jjtrip.common.dto.SliceDto;
 import com.ssafy.jjtrip.common.s3.dto.PresignedUrlResponseDto;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
@@ -52,14 +53,14 @@ public class TripLogController {
     }
 
     @GetMapping
-    public ResponseEntity<SliceDto<TripLogFeedResponseDto>> getUserTripLogs(
+    public ResponseEntity<PageDto<TripLogFeedResponseDto>> getUserTripLogs(
             @RequestParam Long userId,
-            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         final Long memberId = (userDetails != null) ? userDetails.getUser().getId() : null;
-        return ResponseEntity.ok(tripLogService.getUserTripLogs(userId, cursor, limit, memberId));
+        return ResponseEntity.ok(tripLogService.getUserTripLogs(userId, page, limit, memberId));
     }
 
     @GetMapping("/feed")
