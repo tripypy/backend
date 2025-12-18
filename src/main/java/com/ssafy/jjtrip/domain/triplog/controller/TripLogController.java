@@ -38,7 +38,7 @@ public class TripLogController {
             @Valid @RequestBody ImageUploadRequestDto imageUploadRequest,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        PresignedUrlResponseDto response = tripLogImageService.generatePresignedUrl(imageUploadRequest);
+        PresignedUrlResponseDto response = tripLogImageService.generatePresignedUrl(userDetails.getUser().getId(), imageUploadRequest);
         return ResponseEntity.ok(response);
     }
 
