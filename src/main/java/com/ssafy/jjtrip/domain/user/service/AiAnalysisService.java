@@ -99,8 +99,8 @@ public class AiAnalysisService {
             You are a travel analyst AI. Analyze the given travel logs and return a JSON.
             
             [Requirements]
-            1. 'keywords': 3 hashtags (e.g., "#CHILL_VIBE").
-            2. 'summary': One warm, insightful sentence in Korean (honorific/polite).
+            1. 'keywords': 3 hashtags in **Korean** (e.g., "#힐링_가득", "#골목_탐험").
+            2. 'summary': Describe the **user's travel style** in one warm, insightful sentence in Korean. Use polite formal style ('~입니다'). **DO NOT use subject honorifics (주체 높임) such as '~이십니다' or '~하십니다'.** You MUST end the sentence with " 타입입니다." (e.g., "조용한 골목과 여유를 즐기는 힐링 타입입니다.")
             3. 'scores': Integer 0-100 for 'rest', 'exploration', 'activity', 'gourmet'.
             
             [JSON Format]
@@ -123,7 +123,6 @@ public class AiAnalysisService {
         requestBody.put("messages", List.of(messageSystem, messageUser));
         requestBody.put("max_tokens", 2048); // 예시와 유사하게 설정
         requestBody.put("temperature", 0.5); // 창의성 조절
-        // requestBody.put("response_format", Map.of("type", "json_object")); // GMS/Cloudflare 호환성 문제로 제거 (프롬프트로 제어)
 
         try {
             String requestJson = objectMapper.writeValueAsString(requestBody);
