@@ -3,6 +3,7 @@ package com.ssafy.jjtrip.domain.triplog.service;
 import com.ssafy.jjtrip.common.dto.PageDto;
 import com.ssafy.jjtrip.common.dto.SliceDto;
 import com.ssafy.jjtrip.domain.trip.service.TripService;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentFlatDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateRequestDto;
@@ -30,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@lombok.extern.slf4j.Slf4j
 public class TripLogService {
     private final TripLogMapper tripLogMapper;
     private final UserValidateService userValidateService;
@@ -101,12 +103,45 @@ public class TripLogService {
         }
 
         List<TripLogImageResponseDto> images = tripLogMapper.findImagesByLogId(logId);
-        List<TripLogCommentResponseDto> comments = tripLogMapper.findCommentsByLogId(logId);
+        List<TripLogCommentFlatDto> flatComments = tripLogMapper.findCommentsByLogId(logId);
+        List<TripLogCommentResponseDto> comments = organizeComments(flatComments);
 
         int likeCount = tripLogMapper.getLikeCount(logId);
         int commentCount = tripLogMapper.getCommentCount(logId);
 
         return TripLogDetailResponseDto.from(baseInfo, images, comments, likeCount, commentCount);
+    }
+    
+    private List<TripLogCommentResponseDto> organizeComments(List<TripLogCommentFlatDto> flatComments) {
+        Map<Long, TripLogCommentResponseDto> dtoMap = convertToDtoMap(flatComments);
+        return buildHierarchy(flatComments, dtoMap);
+    }
+
+    private Map<Long, TripLogCommentResponseDto> convertToDtoMap(List<TripLogCommentFlatDto> flatComments) {
+        Map<Long, TripLogCommentResponseDto> dtoMap = new java.util.HashMap<>();
+        for (TripLogCommentFlatDto flat : flatComments) {
+            TripLogCommentResponseDto dto = TripLogCommentResponseDto.from(flat, new java.util.ArrayList<>());
+            dtoMap.put(flat.commentId(), dto);
+        }
+        return dtoMap;
+    }
+
+    private List<TripLogCommentResponseDto> buildHierarchy(List<TripLogCommentFlatDto> flatComments, Map<Long, TripLogCommentResponseDto> dtoMap) {
+        List<TripLogCommentResponseDto> roots = new java.util.ArrayList<>();
+        for (TripLogCommentFlatDto flat : flatComments) {
+            TripLogCommentResponseDto currentDto = dtoMap.get(flat.commentId());
+            if (flat.parentId() == null) {
+                roots.add(currentDto);
+            } else {
+                TripLogCommentResponseDto parentDto = dtoMap.get(flat.parentId());
+                if (parentDto != null) {
+                    parentDto.replies().add(currentDto);
+                } else {
+                    throw new TripLogException(TripLogErrorCode.DATA_INTEGRITY_ERROR);
+                }
+            }
+        }
+        return roots;
     }
 
     @Transactional
@@ -165,13 +200,12 @@ public class TripLogService {
 
     @Transactional
     public void addComment(Long logId, Long userId, TripLogCommentRequestDto commentRequestDto) {
-        if (!tripLogMapper.existsById(logId)) {
-            throw new TripLogException(TripLogErrorCode.LOG_NOT_FOUND);
-        }
+        validateCommentRequest(logId, commentRequestDto.parentId());
 
         TripLogComment comment = TripLogComment.builder()
                 .logId(logId)
                 .userId(userId)
+                .parentId(commentRequestDto.parentId())
                 .content(commentRequestDto.content())
                 .build();
         tripLogMapper.insertComment(comment);
@@ -226,5 +260,20 @@ public class TripLogService {
         return tripLogsData.stream()
                 .map(data -> TripLogFeedResponseDto.from(data, imagesByLogId.getOrDefault(data.logId(), Collections.emptyList())))
                 .toList();
+    }
+
+    private void validateCommentRequest(Long logId, Long parentId) {
+        if (!tripLogMapper.existsById(logId)) {
+            throw new TripLogException(TripLogErrorCode.LOG_NOT_FOUND);
+        }
+
+        if (parentId != null) {
+            Long parentLogId = tripLogMapper.findLogIdByCommentId(parentId)
+                    .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
+
+            if (!parentLogId.equals(logId)) {
+                throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.triplog.mapper;
 
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentFlatDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
@@ -204,25 +205,28 @@ public interface TripLogMapper {
             "u.nickname as authorNickname, " +
             "u.profile_image_url as authorImageUrl, " +
             "c.content, " +
+            "c.parent_id as parentId, " +
             "c.created_at as createdAt " +
             "FROM log_comment c " +
             "JOIN user u ON c.user_id = u.id " +
             "WHERE c.log_id = #{logId} " +
             "ORDER BY c.created_at ASC")
+
     @ConstructorArgs({
             @Arg(column = "commentId", javaType = Long.class),
             @Arg(column = "authorNickname", javaType = String.class),
             @Arg(column = "authorImageUrl", javaType = String.class),
             @Arg(column = "content", javaType = String.class),
+            @Arg(column = "parentId", javaType = Long.class),
             @Arg(column = "createdAt", javaType = LocalDateTime.class)
     })
-    List<TripLogCommentResponseDto> findCommentsByLogId(Long logId);
+    List<TripLogCommentFlatDto> findCommentsByLogId(Long logId);
 
     @Select("SELECT EXISTS(SELECT 1 FROM trip_log WHERE id = #{logId})")
     boolean existsById(Long logId);
 
-    @Insert("INSERT INTO log_comment (log_id, user_id, content) " +
-            "VALUES (#{comment.logId}, #{comment.userId}, #{comment.content})")
+    @Insert("INSERT INTO log_comment (log_id, user_id, parent_id, content) " +
+            "VALUES (#{comment.logId}, #{comment.userId}, #{comment.parentId}, #{comment.content})")
     @Options(useGeneratedKeys = true, keyProperty = "comment.id")
     void insertComment(@Param("comment") TripLogComment comment);
 
@@ -265,6 +269,9 @@ public interface TripLogMapper {
 
     @Delete("DELETE FROM trip_log WHERE id = #{logId}")
     void deleteTripLog(Long logId);
+
+    @Select("SELECT log_id FROM log_comment WHERE id = #{commentId}")
+    Optional<Long> findLogIdByCommentId(Long commentId);
     @Select("SELECT tl.id AS logId, tl.title, " +
             "(SELECT tli.image_url FROM log_image tli WHERE tli.log_id = tl.id ORDER BY tli.order_index ASC LIMIT 1) AS thumbnailUrl " +
             "FROM trip_log tl " +
