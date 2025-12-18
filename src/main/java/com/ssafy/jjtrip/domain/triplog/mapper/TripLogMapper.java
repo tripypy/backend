@@ -206,6 +206,7 @@ public interface TripLogMapper {
             "u.profile_image_url as authorImageUrl, " +
             "c.content, " +
             "c.parent_id as parentId, " +
+            "c.is_deleted as isDeleted, " +
             "c.created_at as createdAt " +
             "FROM log_comment c " +
             "JOIN user u ON c.user_id = u.id " +
@@ -218,6 +219,7 @@ public interface TripLogMapper {
             @Arg(column = "authorImageUrl", javaType = String.class),
             @Arg(column = "content", javaType = String.class),
             @Arg(column = "parentId", javaType = Long.class),
+            @Arg(column = "isDeleted", javaType = boolean.class),
             @Arg(column = "createdAt", javaType = LocalDateTime.class)
     })
     List<TripLogCommentFlatDto> findCommentsByLogId(Long logId);
@@ -299,4 +301,22 @@ public interface TripLogMapper {
             @Arg(column = "spotCategories", javaType = String.class)
     })
     List<com.ssafy.jjtrip.domain.user.dto.AiAnalysisRequestDto.LogItem> findLogsForAnalysis(Long userId);
+
+    @Update("UPDATE log_comment SET content = #{content}, updated_at = NOW() WHERE id = #{commentId}")
+    void updateComment(@Param("commentId") Long commentId, @Param("content") String content);
+
+    @Delete("DELETE FROM log_comment WHERE id = #{commentId}")
+    void deleteComment(Long commentId);
+
+    @Update("UPDATE log_comment SET is_deleted = TRUE WHERE id = #{commentId}")
+    void softDeleteComment(Long commentId);
+
+    @Select("SELECT is_deleted FROM log_comment WHERE id = #{commentId}")
+    Optional<Boolean> isCommentDeleted(Long commentId);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM log_comment WHERE parent_id = #{commentId} AND is_deleted = FALSE)")
+    boolean hasReplies(Long commentId);
+
+    @Select("SELECT user_id FROM log_comment WHERE id = #{commentId}")
+    Optional<Long> findCommentAuthorId(Long commentId);
 }

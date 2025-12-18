@@ -100,7 +100,7 @@ public class TripLogController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         tripLogService.deleteTripLog(logId, userDetails.getUser().getId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{logId}/comments")
@@ -111,6 +111,25 @@ public class TripLogController {
     ) {
         tripLogService.addComment(logId, userDetails.getUser().getId(), commentRequestDto);
         return ResponseEntity.created(URI.create("/trip-logs/" + logId)).build();
+    }
+
+    @PatchMapping("/comments/{commentId}")
+    public ResponseEntity<?> updateComment(
+            @PathVariable Long commentId,
+            @Valid @RequestBody TripLogCommentRequestDto commentRequestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        tripLogService.updateComment(userDetails.getUser().getId(), commentId, commentRequestDto.content());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<?> deleteComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        tripLogService.deleteComment(userDetails.getUser().getId(), commentId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{logId}/likes/status")

@@ -17,6 +17,7 @@ public class TripLogComment extends BaseEntityWithUpdate {
     private Long userId;
     private Long parentId;
     private String content;
+    private boolean isDeleted;
 
     private User user;
 }

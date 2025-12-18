@@ -120,7 +120,19 @@ public class TripLogService {
     private Map<Long, TripLogCommentResponseDto> convertToDtoMap(List<TripLogCommentFlatDto> flatComments) {
         Map<Long, TripLogCommentResponseDto> dtoMap = new java.util.HashMap<>();
         for (TripLogCommentFlatDto flat : flatComments) {
-            TripLogCommentResponseDto dto = TripLogCommentResponseDto.from(flat, new java.util.ArrayList<>());
+            String content = flat.isDeleted() ? "삭제된 댓글입니다." : flat.content();
+            String authorNickname = flat.isDeleted() ? "(삭제)" : flat.authorNickname();
+            String authorImageUrl = flat.isDeleted() ? null : flat.authorImageUrl();
+
+            TripLogCommentResponseDto dto = new TripLogCommentResponseDto(
+                    flat.commentId(),
+                    authorNickname,
+                    authorImageUrl,
+                    content,
+                    flat.parentId(),
+                    flat.createdAt(),
+                    new java.util.ArrayList<>()
+            );
             dtoMap.put(flat.commentId(), dto);
         }
         return dtoMap;
@@ -274,6 +286,37 @@ public class TripLogService {
             if (!parentLogId.equals(logId)) {
                 throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
             }
+        }
+    }
+
+    @Transactional
+    public void updateComment(Long userId, Long commentId, String content) {
+        validateCommentAuthor(userId, commentId);
+
+        if (tripLogMapper.isCommentDeleted(commentId).orElse(false)) {
+            throw new TripLogException(TripLogErrorCode.COMMENT_NOT_FOUND);
+        }
+
+        tripLogMapper.updateComment(commentId, content);
+    }
+
+    @Transactional
+    public void deleteComment(Long userId, Long commentId) {
+        validateCommentAuthor(userId, commentId);
+        
+        if (tripLogMapper.hasReplies(commentId)) {
+            tripLogMapper.softDeleteComment(commentId);
+        } else {
+            tripLogMapper.deleteComment(commentId);
+        }
+    }
+
+    private void validateCommentAuthor(Long userId, Long commentId) {
+        Long authorId = tripLogMapper.findCommentAuthorId(commentId)
+                .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
+
+        if (!authorId.equals(userId)) {
+            throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
         }
     }
 }

@@ -8,6 +8,7 @@ public record TripLogCommentFlatDto(
         String authorImageUrl,
         String content,
         Long parentId,
+        boolean isDeleted,
         LocalDateTime createdAt
 ) {
 }

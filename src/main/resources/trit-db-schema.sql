@@ -200,6 +200,7 @@ CREATE TABLE `log_comment` (
   `user_id`     BIGINT NOT NULL,
   `parent_id`   BIGINT, -- 대댓글을 위한 부모 댓글 ID (NULL이면 최상위 댓글)
   `content`     TEXT NOT NULL,
+  `is_deleted`  BOOLEAN NOT NULL DEFAULT FALSE,
   `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
