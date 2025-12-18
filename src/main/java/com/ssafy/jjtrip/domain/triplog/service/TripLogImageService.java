@@ -2,7 +2,7 @@ package com.ssafy.jjtrip.domain.triplog.service;
 
 import com.ssafy.jjtrip.common.s3.S3Provider;
 import com.ssafy.jjtrip.common.s3.dto.PresignedUrlResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.ImageUploadRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.request.ImageUploadRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

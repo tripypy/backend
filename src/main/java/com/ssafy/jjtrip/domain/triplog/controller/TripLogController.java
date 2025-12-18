@@ -4,14 +4,16 @@ import com.ssafy.jjtrip.common.dto.PageDto;
 import com.ssafy.jjtrip.common.dto.SliceDto;
 import com.ssafy.jjtrip.common.s3.dto.PresignedUrlResponseDto;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
-import com.ssafy.jjtrip.domain.triplog.dto.ImageUploadRequestDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateRequestDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogUpdateRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.request.ImageUploadRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogCommentRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogCreateRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogUpdateRequestDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCreateResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogFeedResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogLikeResponseDto;
+import com.ssafy.jjtrip.domain.triplog.service.TripLogCommentService;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogImageService;
+import com.ssafy.jjtrip.domain.triplog.service.TripLogLikeService;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -35,6 +37,8 @@ public class TripLogController {
 
     private final TripLogService tripLogService;
     private final TripLogImageService tripLogImageService;
+    private final TripLogCommentService tripLogCommentService;
+    private final TripLogLikeService tripLogLikeService;
 
     @PostMapping("/images/presigned-url")
     public ResponseEntity<PresignedUrlResponseDto> generatePresignedUrl(
@@ -100,7 +104,7 @@ public class TripLogController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         tripLogService.deleteTripLog(logId, userDetails.getUser().getId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{logId}/comments")
@@ -109,8 +113,27 @@ public class TripLogController {
             @Valid @RequestBody TripLogCommentRequestDto commentRequestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        tripLogService.addComment(logId, userDetails.getUser().getId(), commentRequestDto);
+        tripLogCommentService.addComment(logId, userDetails.getUser().getId(), commentRequestDto);
         return ResponseEntity.created(URI.create("/trip-logs/" + logId)).build();
+    }
+
+    @PatchMapping("/comments/{commentId}")
+    public ResponseEntity<?> updateComment(
+            @PathVariable Long commentId,
+            @Valid @RequestBody TripLogCommentRequestDto commentRequestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        tripLogCommentService.updateComment(userDetails.getUser().getId(), commentId, commentRequestDto.content());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<?> deleteComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        tripLogCommentService.deleteComment(userDetails.getUser().getId(), commentId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{logId}/likes/status")
@@ -118,7 +141,7 @@ public class TripLogController {
             @PathVariable Long logId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        TripLogLikeResponseDto response = tripLogService.getLikeStatus(logId, userDetails.getUser().getId());
+        TripLogLikeResponseDto response = tripLogLikeService.getLikeStatus(logId, userDetails.getUser().getId());
         return ResponseEntity.ok(response);
     }
 
@@ -127,7 +150,7 @@ public class TripLogController {
             @PathVariable Long logId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        TripLogLikeResponseDto response = tripLogService.likeTripLog(logId, userDetails.getUser().getId());
+        TripLogLikeResponseDto response = tripLogLikeService.likeTripLog(logId, userDetails.getUser().getId());
         return ResponseEntity.ok(response);
     }
 
@@ -136,7 +159,7 @@ public class TripLogController {
             @PathVariable Long logId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        TripLogLikeResponseDto response = tripLogService.unlikeTripLog(logId, userDetails.getUser().getId());
+        TripLogLikeResponseDto response = tripLogLikeService.unlikeTripLog(logId, userDetails.getUser().getId());
         return ResponseEntity.ok(response);
     }
 }

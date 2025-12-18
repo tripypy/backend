@@ -1,10 +1,10 @@
 package com.ssafy.jjtrip.domain.triplog.mapper;
 
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogSummaryDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCommentFlatDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogDetailResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogFeedResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogImageResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogSummaryDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
 import java.time.LocalDateTime;
@@ -204,25 +204,30 @@ public interface TripLogMapper {
             "u.nickname as authorNickname, " +
             "u.profile_image_url as authorImageUrl, " +
             "c.content, " +
+            "c.parent_id as parentId, " +
+            "c.is_deleted as isDeleted, " +
             "c.created_at as createdAt " +
             "FROM log_comment c " +
             "JOIN user u ON c.user_id = u.id " +
             "WHERE c.log_id = #{logId} " +
             "ORDER BY c.created_at ASC")
+
     @ConstructorArgs({
             @Arg(column = "commentId", javaType = Long.class),
             @Arg(column = "authorNickname", javaType = String.class),
             @Arg(column = "authorImageUrl", javaType = String.class),
             @Arg(column = "content", javaType = String.class),
+            @Arg(column = "parentId", javaType = Long.class),
+            @Arg(column = "isDeleted", javaType = boolean.class),
             @Arg(column = "createdAt", javaType = LocalDateTime.class)
     })
-    List<TripLogCommentResponseDto> findCommentsByLogId(Long logId);
+    List<TripLogCommentFlatDto> findCommentsByLogId(Long logId);
 
     @Select("SELECT EXISTS(SELECT 1 FROM trip_log WHERE id = #{logId})")
     boolean existsById(Long logId);
 
-    @Insert("INSERT INTO log_comment (log_id, user_id, content) " +
-            "VALUES (#{comment.logId}, #{comment.userId}, #{comment.content})")
+    @Insert("INSERT INTO log_comment (log_id, user_id, parent_id, content) " +
+            "VALUES (#{comment.logId}, #{comment.userId}, #{comment.parentId}, #{comment.content})")
     @Options(useGeneratedKeys = true, keyProperty = "comment.id")
     void insertComment(@Param("comment") TripLogComment comment);
 
@@ -265,6 +270,9 @@ public interface TripLogMapper {
 
     @Delete("DELETE FROM trip_log WHERE id = #{logId}")
     void deleteTripLog(Long logId);
+
+    @Select("SELECT log_id FROM log_comment WHERE id = #{commentId}")
+    Optional<Long> findLogIdByCommentId(Long commentId);
     @Select("SELECT tl.id AS logId, tl.title, " +
             "(SELECT tli.image_url FROM log_image tli WHERE tli.log_id = tl.id ORDER BY tli.order_index ASC LIMIT 1) AS thumbnailUrl " +
             "FROM trip_log tl " +
@@ -292,4 +300,22 @@ public interface TripLogMapper {
             @Arg(column = "spotCategories", javaType = String.class)
     })
     List<com.ssafy.jjtrip.domain.user.dto.AiAnalysisRequestDto.LogItem> findLogsForAnalysis(Long userId);
+
+    @Update("UPDATE log_comment SET content = #{content}, updated_at = NOW() WHERE id = #{commentId}")
+    void updateComment(@Param("commentId") Long commentId, @Param("content") String content);
+
+    @Delete("DELETE FROM log_comment WHERE id = #{commentId}")
+    void deleteComment(Long commentId);
+
+    @Update("UPDATE log_comment SET is_deleted = TRUE WHERE id = #{commentId}")
+    void softDeleteComment(Long commentId);
+
+    @Select("SELECT is_deleted FROM log_comment WHERE id = #{commentId}")
+    Optional<Boolean> isCommentDeleted(Long commentId);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM log_comment WHERE parent_id = #{commentId} AND is_deleted = FALSE)")
+    boolean hasReplies(Long commentId);
+
+    @Select("SELECT user_id FROM log_comment WHERE id = #{commentId}")
+    Optional<Long> findCommentAuthorId(Long commentId);
 }

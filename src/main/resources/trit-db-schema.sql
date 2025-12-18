@@ -198,12 +198,15 @@ CREATE TABLE `log_comment` (
   `id`          BIGINT NOT NULL AUTO_INCREMENT,
   `log_id`      BIGINT NOT NULL,
   `user_id`     BIGINT NOT NULL,
+  `parent_id`   BIGINT, -- 대댓글을 위한 부모 댓글 ID (NULL이면 최상위 댓글)
   `content`     TEXT NOT NULL,
+  `is_deleted`  BOOLEAN NOT NULL DEFAULT FALSE,
   `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_comment_log` FOREIGN KEY (`log_id`) REFERENCES `trip_log` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_comment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_comment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parent_id`) REFERENCES `log_comment` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =================================================================

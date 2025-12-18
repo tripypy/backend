@@ -1,7 +1,6 @@
-package com.ssafy.jjtrip.domain.triplog.dto;
+package com.ssafy.jjtrip.domain.triplog.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-
 import java.time.LocalDateTime;
 import java.util.List;
 

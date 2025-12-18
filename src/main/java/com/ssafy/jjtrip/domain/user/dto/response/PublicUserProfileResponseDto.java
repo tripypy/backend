@@ -2,11 +2,10 @@ package com.ssafy.jjtrip.domain.user.dto.response;
 
 import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogSummaryDto; // LogSummaryDto -> TripLogSummaryDto
+import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogSummaryDto;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.List;
 
 @Getter
 @Builder
