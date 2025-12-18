@@ -206,4 +206,9 @@ public class UserService {
         }
         return sb.toString();
     }
+
+    @Transactional
+    public void updateTravelStyle(Long userId, String summary) {
+        userMapper.updateTravelStyleSummary(userId, summary);
+    }
 }

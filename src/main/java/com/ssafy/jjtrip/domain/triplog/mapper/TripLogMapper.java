@@ -268,4 +268,25 @@ public interface TripLogMapper {
             "JOIN trip t ON tl.trip_id = t.id " +
             "WHERE t.user_id = #{userId}")
     List<TripLogSummaryDto> findSummariesByUserId(@Param("userId") Long userId);
+
+    @Select("""
+            SELECT 
+                tl.title,
+                tl.content,
+                (
+                    SELECT GROUP_CONCAT(DISTINCT s.category SEPARATOR ', ')
+                    FROM trip_item ti
+                    JOIN spot s ON ti.spot_id = s.id
+                    WHERE ti.trip_id = t.id
+                ) as spotCategories
+            FROM trip_log tl
+            JOIN trip t ON tl.trip_id = t.id
+            WHERE t.user_id = #{userId}
+            """)
+    @ConstructorArgs({
+            @Arg(column = "title", javaType = String.class),
+            @Arg(column = "content", javaType = String.class),
+            @Arg(column = "spotCategories", javaType = String.class)
+    })
+    List<com.ssafy.jjtrip.domain.user.dto.AiAnalysisRequestDto.LogItem> findLogsForAnalysis(Long userId);
 }
