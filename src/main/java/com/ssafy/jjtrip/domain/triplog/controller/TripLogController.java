@@ -8,7 +8,6 @@ import com.ssafy.jjtrip.domain.triplog.dto.ImageUploadRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
-import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogUpdateRequestDto;

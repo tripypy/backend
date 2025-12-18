@@ -53,6 +53,8 @@ public class TripLogService {
                 .build();
 
         tripLogMapper.insertTripLog(tripLog);
+        processAndSaveImages(tripLog.getId(), userId, requestDto.content());
+
         return new TripLogCreateResponseDto(tripLog.getId());
     }
 
@@ -119,6 +121,31 @@ public class TripLogService {
                 .build();
 
         tripLogMapper.updateTripLog(tripLog);
+
+        if (requestDto.content() != null) {
+            tripLogMapper.deleteLogImages(logId);
+            processAndSaveImages(logId, userId, requestDto.content());
+        }
+    }
+
+    private void processAndSaveImages(Long logId, Long userId, String content) {
+        if (content == null || content.isBlank()) {
+            return;
+        }
+
+        // Markdown Image Pattern: ![alt](url)
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("!\\[.*?\\]\\((.*?)\\)");
+        java.util.regex.Matcher matcher = pattern.matcher(content);
+
+        int orderIndex = 0;
+        while (matcher.find()) {
+            String imageUrl = matcher.group(1);
+            String imageRefKey = "img_" + orderIndex; 
+            
+            tripLogMapper.insertTripLogImage(new TripLogMapper.LogImageInsertInfo(
+                    logId, userId, imageUrl, orderIndex++, imageRefKey
+            ));
+        }
     }
 
     @Transactional

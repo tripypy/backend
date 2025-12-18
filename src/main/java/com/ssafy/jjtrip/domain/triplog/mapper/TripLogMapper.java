@@ -34,6 +34,9 @@ public interface TripLogMapper {
             "VALUES (#{logId}, #{userId}, #{imageUrl}, #{orderIndex}, #{imageRefKey})")
     void insertTripLogImage(LogImageInsertInfo imageInfo);
 
+    @Delete("DELETE FROM log_image WHERE log_id = #{logId}")
+    void deleteLogImages(Long logId);
+
     @Select("SELECT EXISTS(SELECT 1 FROM trip_log WHERE trip_id = #{tripId})")
     boolean existsByTripId(Long tripId);
 
