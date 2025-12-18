@@ -2,8 +2,10 @@ package com.ssafy.jjtrip.common.s3;
 
 import com.ssafy.jjtrip.common.s3.exception.FileErrorCode;
 import com.ssafy.jjtrip.common.s3.exception.FileException;
+import java.io.IOException;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -11,33 +13,29 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.IOException;
-import java.util.UUID;
+@Component
+public class S3Provider {
 
-@Service
-public class S3Service {
-
-    private static final String PROFILE_IMAGE_PREFIX = "public/profile/";
     private static final String URL_SEPARATOR = "/";
 
     private final S3Client s3Client;
     private final String bucketName;
     private final String baseUrl;
 
-    public S3Service(S3Client s3Client,
-                       @Value("${spring.cloud.aws.s3.bucket}") String bucketName,
-                       @Value("${file.base-url}") String baseUrl) {
+    public S3Provider(S3Client s3Client,
+                      @Value("${spring.cloud.aws.s3.bucket}") String bucketName,
+                      @Value("${file.base-url}") String baseUrl) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.baseUrl = baseUrl;
     }
 
-    public String uploadProfileImage(MultipartFile file) {
+    public String upload(MultipartFile file, String prefix) {
         if (file.isEmpty()) {
             throw new FileException(FileErrorCode.EMPTY_FILE);
         }
 
-        String key = createKey(PROFILE_IMAGE_PREFIX, file.getOriginalFilename());
+        String key = createKey(prefix, file.getOriginalFilename());
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()

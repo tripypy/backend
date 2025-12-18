@@ -1,11 +1,12 @@
 package com.ssafy.jjtrip.domain.user.service;
 
 import com.ssafy.jjtrip.common.mail.EmailService;
-import com.ssafy.jjtrip.common.s3.S3Service;
+import com.ssafy.jjtrip.common.s3.S3Provider;
 import com.ssafy.jjtrip.common.util.EmailMasker;
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
 import com.ssafy.jjtrip.domain.auth.exception.AuthException;
 import com.ssafy.jjtrip.domain.user.dto.request.UpdateUserRequestDto;
+import com.ssafy.jjtrip.domain.user.dto.response.ProfileImageUpdateResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserAndProfileDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserProfileResponseDto;
@@ -30,7 +31,8 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    private final S3Service s3Service;
+    private final S3Provider s3Provider;
+    private static final String DIR = "public/profile/";
     
     public UserProfileResponseDto getUserProfile(Long userId) {
         UserAndProfileDto userAndProfile = userMapper.findUserAndProfileById(userId)
@@ -81,33 +83,30 @@ public class UserService {
     }
 
     @Transactional
-    public String updateUserProfileImage(Long userId, MultipartFile profileImage) {
+    public ProfileImageUpdateResponseDto updateProfileImage(Long userId, MultipartFile profileImage) {
         User user = userMapper.findById(userId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
         String oldImageUrl = user.getProfileImageUrl();
 
-        // S3에 새 이미지 업로드
-        String newImageUrl = s3Service.uploadProfileImage(profileImage);
+        String newImageUrl = s3Provider.upload(profileImage, DIR);
 
-        // DB에 새 이미지 URL 업데이트
         userMapper.updateProfileImageUrl(userId, newImageUrl);
 
-        // S3에서 기존 이미지 삭제 (존재하는 경우)
         if (StringUtils.hasText(oldImageUrl)) {
-            s3Service.deleteImage(oldImageUrl);
+            s3Provider.deleteImage(oldImageUrl);
         }
 
-        return newImageUrl;
+        return new ProfileImageUpdateResponseDto(newImageUrl);
     }
 
     @Transactional
-    public void deleteUserProfileImage(Long userId) {
+    public void deleteProfileImage(Long userId) {
         User user = userMapper.findById(userId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
         String imageUrl = user.getProfileImageUrl();
 
         if (StringUtils.hasText(imageUrl)) {
-            s3Service.deleteImage(imageUrl);
+            s3Provider.deleteImage(imageUrl);
             userMapper.deleteProfileImageUrl(userId);
         }
     }
