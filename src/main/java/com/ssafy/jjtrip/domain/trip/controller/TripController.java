@@ -2,6 +2,7 @@ package com.ssafy.jjtrip.domain.trip.controller;
 
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
+import com.ssafy.jjtrip.domain.trip.dto.TripIdResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemsReplaceRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
@@ -87,5 +88,14 @@ public class TripController {
     ) {
         tripService.replaceTripItems(tripId, requestDto, userDetails.getUser().getId());
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{tripId}/scrap")
+    public ResponseEntity<TripIdResponseDto> scrapTrip(
+            @PathVariable Long tripId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long newTripId = tripService.scrapTrip(tripId, userDetails.getUser().getId());
+        return ResponseEntity.ok(new TripIdResponseDto(newTripId));
     }
 }

@@ -26,4 +26,15 @@ public class Trip extends BaseEntityWithUpdate {
     // 상세 조회 시 JOIN 결과를 담기 위한 필드
     @Builder.Default
     private List<TripItem> tripItems = new ArrayList<>();
+
+    public static Trip createScrap(Trip source, Long userId) {
+        return Trip.builder()
+                .userId(userId)
+                .title("스크랩: " + source.getTitle())
+                .startDate(source.getStartDate())
+                .endDate(source.getEndDate())
+                .status(TripStatus.PLANNED)
+                .visibility(TripVisibility.PRIVATE)
+                .build();
+    }
 }

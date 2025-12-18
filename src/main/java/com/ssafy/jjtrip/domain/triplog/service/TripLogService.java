@@ -109,12 +109,7 @@ public class TripLogService {
 
     @Transactional
     public void updateTripLog(Long logId, Long userId, TripLogUpdateRequestDto requestDto) {
-        Long authorId = tripLogMapper.findAuthorIdByLogId(logId)
-                .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
-
-        if (!authorId.equals(userId)) {
-            throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
-        }
+        validateLogAuthor(logId, userId);
 
         TripLog tripLog = TripLog.builder()
                 .id(logId)
@@ -128,14 +123,17 @@ public class TripLogService {
 
     @Transactional
     public void deleteTripLog(Long logId, Long userId) {
+        validateLogAuthor(logId, userId);
+        tripLogMapper.deleteTripLog(logId);
+    }
+
+    private void validateLogAuthor(Long logId, Long userId) {
         Long authorId = tripLogMapper.findAuthorIdByLogId(logId)
                 .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
 
         if (!authorId.equals(userId)) {
             throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
         }
-
-        tripLogMapper.deleteTripLog(logId);
     }
 
     @Transactional
