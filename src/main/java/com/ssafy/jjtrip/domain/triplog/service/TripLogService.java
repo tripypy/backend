@@ -11,6 +11,7 @@ import com.ssafy.jjtrip.domain.triplog.dto.TripLogDetailResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogImageResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogUpdateRequestDto;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
@@ -98,6 +99,25 @@ public class TripLogService {
         int commentCount = tripLogMapper.getCommentCount(logId);
 
         return TripLogDetailResponseDto.from(baseInfo, images, comments, likeCount, commentCount);
+    }
+
+    @Transactional
+    public void updateTripLog(Long logId, Long userId, TripLogUpdateRequestDto requestDto) {
+        Long authorId = tripLogMapper.findAuthorIdByLogId(logId)
+                .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
+
+        if (!authorId.equals(userId)) {
+            throw new TripLogException(TripLogErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        TripLog tripLog = TripLog.builder()
+                .id(logId)
+                .title(requestDto.title())
+                .content(requestDto.content())
+                .visibility(requestDto.visibility())
+                .build();
+
+        tripLogMapper.updateTripLog(tripLog);
     }
 
     @Transactional

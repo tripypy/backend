@@ -17,6 +17,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface TripLogMapper {
@@ -233,4 +234,26 @@ public interface TripLogMapper {
 
     @Select("SELECT COUNT(*) FROM log_like WHERE log_id = #{logId}")
     int getLikeCount(Long logId);
+
+    @Update("""
+            <script>
+            UPDATE trip_log
+            <set>
+                <if test="title != null">title = #{title},</if>
+                <if test="content != null">content = #{content},</if>
+                <if test="visibility != null">visibility = #{visibility},</if>
+                updated_at = NOW()
+            </set>
+            WHERE id = #{id}
+            </script>
+            """)
+    void updateTripLog(com.ssafy.jjtrip.domain.triplog.entity.TripLog tripLog);
+
+    @Select("""
+            SELECT t.user_id
+            FROM trip_log tl
+            JOIN trip t ON tl.trip_id = t.id
+            WHERE tl.id = #{logId}
+            """)
+    Optional<Long> findAuthorIdByLogId(Long logId);
 }

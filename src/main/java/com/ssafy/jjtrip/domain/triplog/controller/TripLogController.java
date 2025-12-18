@@ -8,8 +8,10 @@ import com.ssafy.jjtrip.domain.triplog.dto.ImageUploadRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCommentRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogCreateResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.TripLogLikeResponseDto;
+import com.ssafy.jjtrip.domain.triplog.dto.TripLogUpdateRequestDto;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogImageService;
 import com.ssafy.jjtrip.domain.triplog.service.TripLogService;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -76,6 +79,16 @@ public class TripLogController {
     @GetMapping("/{logId}")
     public ResponseEntity<?> getTripLogDetail(@PathVariable Long logId) {
         return ResponseEntity.ok(tripLogService.getTripLogDetail(logId));
+    }
+
+    @PutMapping("/{logId}")
+    public ResponseEntity<?> updateTripLog(
+            @PathVariable Long logId,
+            @Valid @RequestBody TripLogUpdateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        tripLogService.updateTripLog(logId, userDetails.getUser().getId(), requestDto);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{logId}/comments")
