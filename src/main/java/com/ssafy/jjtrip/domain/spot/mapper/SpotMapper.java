@@ -1,6 +1,7 @@
 package com.ssafy.jjtrip.domain.spot.mapper;
 
 import com.ssafy.jjtrip.domain.spot.entity.Spot;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
@@ -8,6 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface SpotMapper {
@@ -38,4 +40,6 @@ public interface SpotMapper {
         LIMIT 10
     """)
     List<Spot> findTop10MostAdded();
+    @Update("UPDATE spot SET review_count = #{count}, average_rating = #{averageRating} WHERE id = #{spotId}")
+    void updateReviewStats(@Param("spotId") Long spotId, @Param("count") int count, @Param("averageRating") BigDecimal averageRating);
 }
