@@ -2,6 +2,7 @@ package com.ssafy.jjtrip.domain.spot.service;
 
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewRequestDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewResponseDto;
+import com.ssafy.jjtrip.domain.spot.dto.SpotReviewStatsResponseDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewUpdateRequestDto;
 import com.ssafy.jjtrip.domain.spot.entity.SpotReview;
 import com.ssafy.jjtrip.domain.spot.exception.SpotErrorCode;
@@ -80,6 +81,15 @@ public class SpotReviewService {
 
         spotReviewMapper.delete(reviewId);
         updateSpotStats(review.getSpotId());
+    }
+
+    public SpotReviewStatsResponseDto getReviewStats(Long spotId) {
+        if (!spotMapper.existsById(spotId)) {
+            throw new SpotException(SpotErrorCode.SPOT_NOT_FOUND);
+        }
+        int count = spotReviewMapper.countBySpotId(spotId);
+        BigDecimal averageRating = spotReviewMapper.getAverageRating(spotId);
+        return new SpotReviewStatsResponseDto(averageRating, count);
     }
 
     private void updateSpotStats(Long spotId) {
