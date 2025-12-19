@@ -40,6 +40,18 @@ public interface SpotMapper {
         LIMIT 10
     """)
     List<Spot> findTop10MostAdded();
+    @Select("SELECT id, kakao_place_id, name, address, category, lat, lng, place_url, thumbnail_url, review_count, average_rating, created_at " +
+            "FROM spot WHERE id = #{id}")
+    Optional<Spot> findById(Long id);
+
+    @Update("UPDATE spot SET name = #{name}, address = #{address}, category = #{category}, " +
+            "lat = #{lat}, lng = #{lng}, place_url = #{placeUrl}, thumbnail_url = #{thumbnailUrl} " +
+            "WHERE id = #{id}")
+    void update(Spot spot);
+
+    @Update("DELETE FROM spot WHERE id = #{id}")
+    void delete(Long id);
+
     @Update("UPDATE spot SET review_count = #{count}, average_rating = #{averageRating} WHERE id = #{spotId}")
     void updateReviewStats(@Param("spotId") Long spotId, @Param("count") int count, @Param("averageRating") BigDecimal averageRating);
 }
