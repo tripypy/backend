@@ -5,8 +5,10 @@ import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogDetailResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogFeedResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogImageResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogSummaryDto;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogComment;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
+import com.ssafy.jjtrip.domain.user.dto.AiAnalysisRequestDto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +30,7 @@ public interface TripLogMapper {
 
     @Insert("INSERT INTO trip_log (trip_id, title, content, visibility) VALUES (#{tripId}, #{title}, #{content}, #{visibility})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void insertTripLog(com.ssafy.jjtrip.domain.triplog.entity.TripLog tripLog);
+    void insertTripLog(TripLog tripLog);
 
     @Insert("INSERT INTO log_image (log_id, user_id, image_url, order_index, image_ref_key) " +
             "VALUES (#{logId}, #{userId}, #{imageUrl}, #{orderIndex}, #{imageRefKey})")
@@ -258,7 +260,7 @@ public interface TripLogMapper {
             WHERE id = #{id}
             </script>
             """)
-    void updateTripLog(com.ssafy.jjtrip.domain.triplog.entity.TripLog tripLog);
+    void updateTripLog(TripLog tripLog);
 
     @Select("""
             SELECT t.user_id
@@ -267,6 +269,12 @@ public interface TripLogMapper {
             WHERE tl.id = #{logId}
             """)
     Optional<Long> findAuthorIdByLogId(Long logId);
+
+    @Select("SELECT id, trip_id, title, content, visibility, created_at, updated_at FROM trip_log WHERE id = #{id}")
+    Optional<TripLog> findById(Long id);
+
+    @Select("SELECT id, trip_id, title, content, visibility, created_at, updated_at FROM trip_log WHERE trip_id = #{tripId}")
+    List<TripLog> findByTripId(Long tripId);
 
     @Delete("DELETE FROM trip_log WHERE id = #{logId}")
     void deleteTripLog(Long logId);
@@ -299,7 +307,7 @@ public interface TripLogMapper {
             @Arg(column = "content", javaType = String.class),
             @Arg(column = "spotCategories", javaType = String.class)
     })
-    List<com.ssafy.jjtrip.domain.user.dto.AiAnalysisRequestDto.LogItem> findLogsForAnalysis(Long userId);
+    List<AiAnalysisRequestDto.LogItem> findLogsForAnalysis(Long userId);
 
     @Update("UPDATE log_comment SET content = #{content}, updated_at = NOW() WHERE id = #{commentId}")
     void updateComment(@Param("commentId") Long commentId, @Param("content") String content);

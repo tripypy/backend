@@ -1,16 +1,23 @@
 package com.ssafy.jjtrip.domain.search.service;
 
 import com.ssafy.jjtrip.domain.search.dto.TripLogSearchDoc;
+import com.ssafy.jjtrip.domain.search.util.SearchUtil;
+import com.ssafy.jjtrip.domain.trip.entity.Trip;
+import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Service;
-import java.util.List;
 
-@RequiredArgsConstructor
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class TripLogSearchService {
 
     private final ElasticsearchOperations elasticsearchOperations;
@@ -49,35 +56,59 @@ public class TripLogSearchService {
             "minimum_should_match": 0
           }
         }
-        """.formatted(escapeJson(keyword), escapeJson(keyword));
+        """.formatted(SearchUtil.escapeJson(keyword), SearchUtil.escapeJson(keyword));
 
         Query query = new StringQuery(queryString);
         return elasticsearchOperations.search(query, TripLogSearchDoc.class)
-                .stream().map(SearchHit::getContent).toList();
+                .stream()
+                .map(SearchHit::getContent)
+                .map(this::normalizeDoc)
+                .toList();
     }
 
-    private static String escapeJson(String s) {
-        if (s == null) return "";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '"' -> sb.append("\\\"");
-                case '\\' -> sb.append("\\\\");
-                case '\b' -> sb.append("\\b");
-                case '\f' -> sb.append("\\f");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                default -> {
-                    if (c < ' ') {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-                }
-            }
+    private TripLogSearchDoc normalizeDoc(TripLogSearchDoc doc) {
+        return new TripLogSearchDoc(
+                doc.logId(),
+                doc.tripId(),
+                doc.userId(),
+                doc.title(),
+                doc.content(),
+                doc.tripLocationSummary(),
+                SearchUtil.normalizeDate(doc.tripStartDate(), false),
+                SearchUtil.normalizeDate(doc.tripEndDate(), false),
+                SearchUtil.normalizeDate(doc.createdAt(), true),
+                doc.imageUrls()
+        );
+    }
+
+    public void saveTripLog(TripLog tripLog, Trip trip, List<String> imageUrls) {
+        if (tripLog.getVisibility() != TripLogVisibility.PUBLIC ||
+            trip.getVisibility() != TripVisibility.PUBLIC) {
+            deleteTripLog(tripLog.getId());
+            return;
         }
-        return sb.toString();
+
+        TripLogSearchDoc doc = new TripLogSearchDoc(
+                tripLog.getId(),
+                trip.getId(),
+                trip.getUserId(),
+                tripLog.getTitle(),
+                tripLog.getContent(),
+                trip.getLocationSummary(),
+                trip.getStartDate() != null ? trip.getStartDate().toString() : null,
+                trip.getEndDate() != null ? trip.getEndDate().toString() : null,
+                tripLog.getCreatedAt() != null ? tripLog.getCreatedAt().toString() : null,
+                imageUrls
+        );
+
+        log.info("Saving trip log to ES: {}", tripLog.getId());
+        elasticsearchOperations.save(doc);
+        log.info("Saved trip log to ES: {}", tripLog.getId());
+    }
+
+    public void deleteTripLog(Long logId) {
+        log.info("Deleting trip log from ES: {}", logId);
+        elasticsearchOperations.delete(String.valueOf(logId), TripLogSearchDoc.class);
+        log.info("Deleted trip log from ES: {}", logId);
     }
 }

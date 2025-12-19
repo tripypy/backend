@@ -1,14 +1,17 @@
 package com.ssafy.jjtrip.domain.search.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
 import java.util.List;
 
 @Document(indexName = "trit_trip")
 public record TripSearchDoc(
+    @Id
     @Field(name = "trip_id")
     @JsonProperty("trip_id") Long tripId,
 
@@ -21,14 +24,14 @@ public record TripSearchDoc(
     @Field(name = "location_summary")
     @JsonProperty("location_summary") String locationSummary,
 
-    @Field(name = "start_date")
-    @JsonProperty("start_date") LocalDate startDate,
+    @Field(name = "start_date", type = FieldType.Keyword)
+    @JsonProperty("start_date") String startDate,
 
-    @Field(name = "end_date")
-    @JsonProperty("end_date") LocalDate endDate,
+    @Field(name = "end_date", type = FieldType.Keyword)
+    @JsonProperty("end_date") String endDate,
 
-    @Field(name = "created_at")
-    @JsonProperty("created_at") LocalDateTime createdAt,
+    @Field(name = "created_at", type = FieldType.Keyword)
+    @JsonProperty("created_at") String createdAt,
 
     @Field(name = "spot_names")
     @JsonProperty("spot_names") List<String> spotNames,

@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.trip.service;
 
+import com.ssafy.jjtrip.domain.search.service.TripSearchService;
 import com.ssafy.jjtrip.domain.spot.service.SpotService;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemsReplaceRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
@@ -11,6 +12,10 @@ import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
 import com.ssafy.jjtrip.domain.trip.exception.TripErrorCode;
 import com.ssafy.jjtrip.domain.trip.exception.TripException;
 import com.ssafy.jjtrip.domain.trip.mapper.TripMapper;
+import com.ssafy.jjtrip.domain.search.service.TripLogSearchService;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
+import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +29,9 @@ public class TripService {
     private final TripMapper tripMapper;
     private final SpotService spotService;
     private final LocationSummaryService locationSummaryService;
+    private final TripSearchService tripSearchService;
+    private final TripLogMapper tripLogMapper;
+    private final TripLogSearchService tripLogSearchService;
 
     @Transactional
     public Trip createTrip(Long userId) {
@@ -35,6 +43,10 @@ public class TripService {
                 .build();
         tripMapper.insert(newTrip);
         newTrip.setTripItems(new java.util.ArrayList<>()); // Initialize tripItems to prevent NPE
+        
+        // ES Sync (Private by default, but ensuring sync logic)
+        tripSearchService.saveTrip(newTrip, newTrip.getTripItems());
+        
         return newTrip;
     }
 
@@ -87,12 +99,23 @@ public class TripService {
         if (requestDto.visibility() != null) trip.setVisibility(requestDto.visibility());
 
         tripMapper.update(trip);
+        
+        List<TripItem> items = tripMapper.selectItemsWithSpotsByTripId(tripId);
+        tripSearchService.saveTrip(trip, items);
+
+        // Sync associated logs to ES (e.g., when visibility changes)
+        List<TripLog> tripLogs = tripLogMapper.findByTripId(tripId);
+        for (TripLog log : tripLogs) {
+            List<String> imageUrls = extractImageUrls(log.getContent());
+            tripLogSearchService.saveTripLog(log, trip, imageUrls);
+        }
     }
 
     @Transactional
     public void deleteTrip(Long tripId, Long userId) {
         getTripForModification(tripId, userId);
         tripMapper.delete(tripId);
+        tripSearchService.deleteTrip(tripId);
     }
 
     @Transactional
@@ -110,6 +133,11 @@ public class TripService {
         }
 
         locationSummaryService.updateLocationSummary(tripId);
+        
+        // Sync to ES
+        Trip trip = findTripById(tripId);
+        List<TripItem> items = tripMapper.selectItemsWithSpotsByTripId(tripId);
+        tripSearchService.saveTrip(trip, items);
     }
 
     private Long resolveSpotId(TripItemsReplaceRequestDto.Item item) {
@@ -157,6 +185,10 @@ public class TripService {
         copyTripItems(tripId, newTrip.getId());
         locationSummaryService.updateLocationSummary(newTrip.getId());
         
+        // Sync new scrap trip (Private by default)
+        List<TripItem> items = tripMapper.selectItemsWithSpotsByTripId(newTrip.getId());
+        tripSearchService.saveTrip(newTrip, items);
+        
         return newTrip.getId();
     }
 
@@ -180,5 +212,16 @@ public class TripService {
                     item.getOrderIndex()
             );
         }
+    }
+
+    private List<String> extractImageUrls(String content) {
+        if (content == null || content.isBlank()) return Collections.emptyList();
+        List<String> urls = new java.util.ArrayList<>();
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("!\\[.*?\\]\\((.*?)\\)");
+        java.util.regex.Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            urls.add(matcher.group(1));
+        }
+        return urls;
     }
 }
