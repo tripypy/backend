@@ -3,7 +3,6 @@ package com.ssafy.jjtrip.domain.friend.service;
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
 import com.ssafy.jjtrip.domain.friend.dto.response.FriendRequestResponseDto;
 import com.ssafy.jjtrip.domain.friend.entity.FriendRequest;
-import com.ssafy.jjtrip.domain.friend.entity.FriendRequestStatus;
 import com.ssafy.jjtrip.domain.friend.entity.Friendship;
 import com.ssafy.jjtrip.domain.friend.exception.FriendErrorCode;
 import com.ssafy.jjtrip.domain.friend.exception.FriendException;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -44,16 +42,13 @@ public class FriendService {
 
         // 4. 이미 처리 대기 중인 요청이 있는지 검증 (양방향)
         friendMapper.findRequestByUsers(requesterId, receiverId).ifPresent(request -> {
-            if (request.getStatus() == FriendRequestStatus.PENDING || request.getStatus() == FriendRequestStatus.ACCEPTED) {
-                throw new FriendException(FriendErrorCode.REQUEST_ALREADY_EXISTS);
-            }
+            throw new FriendException(FriendErrorCode.REQUEST_ALREADY_EXISTS);
         });
 
         // 5. 모든 검증 통과 후 요청 생성
         FriendRequest friendRequest = FriendRequest.builder()
                 .requesterId(requesterId)
                 .receiverId(receiverId)
-                .status(FriendRequestStatus.PENDING)
                 .build();
         friendMapper.saveRequest(friendRequest);
     }
@@ -74,11 +69,6 @@ public class FriendService {
         // 요청을 수락하는 사용자가 해당 요청의 수신자인지 확인
         if (!friendRequest.getReceiverId().equals(acceptingUserId)) {
             throw new FriendException(FriendErrorCode.NOT_THE_RECEIVER);
-        }
-
-        // 요청 상태가 PENDING인지 확인
-        if (friendRequest.getStatus() != FriendRequestStatus.PENDING) {
-            throw new FriendException(FriendErrorCode.REQUEST_ALREADY_PROCESSED);
         }
 
         // friendship 테이블에 친구 관계 추가 (중복 방지를 위해 항상 작은 ID, 큰 ID 순서로 저장)
@@ -109,11 +99,6 @@ public class FriendService {
             throw new FriendException(FriendErrorCode.NOT_THE_RECEIVER);
         }
 
-        // 요청 상태가 PENDING인지 확인
-        if (friendRequest.getStatus() != FriendRequestStatus.PENDING) {
-            throw new FriendException(FriendErrorCode.REQUEST_ALREADY_PROCESSED);
-        }
-
         // 친구 요청 기록 삭제
         friendMapper.deleteRequestById(requestId);
     }
@@ -126,11 +111,6 @@ public class FriendService {
         // 요청을 취소하는 사용자가 해당 요청의 송신자인지 확인
         if (!friendRequest.getRequesterId().equals(cancellingUserId)) {
             throw new FriendException(FriendErrorCode.NOT_THE_REQUESTER);
-        }
-
-        // 요청 상태가 PENDING인지 확인
-        if (friendRequest.getStatus() != FriendRequestStatus.PENDING) {
-            throw new FriendException(FriendErrorCode.REQUEST_ALREADY_PROCESSED);
         }
 
         // 친구 요청 기록 삭제

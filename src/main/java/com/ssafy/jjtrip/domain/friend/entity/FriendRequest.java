@@ -13,5 +13,4 @@ import lombok.experimental.SuperBuilder;
 public class FriendRequest extends BaseEntityWithUpdate {
     private Long requesterId;
     private Long receiverId;
-    private FriendRequestStatus status;
 }
