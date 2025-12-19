@@ -26,12 +26,8 @@ public class SpotReviewService {
 
     @Transactional
     public Long createReview(Long userId, SpotReviewRequestDto requestDto) {
-        if (!spotMapper.existsById(requestDto.spotId())) {
-            throw new SpotException(SpotErrorCode.SPOT_NOT_FOUND);
-        }
-        if (spotReviewMapper.existsBySpotIdAndUserId(requestDto.spotId(), userId)) {
-            throw new SpotException(SpotErrorCode.ALREADY_REVIEWED);
-        }
+        validateSpotExists(requestDto.spotId());
+        validateDuplicateReview(userId, requestDto.spotId());
 
         SpotReview review = SpotReview.builder()
                 .spotId(requestDto.spotId())
@@ -47,20 +43,14 @@ public class SpotReviewService {
     }
 
     public List<SpotReviewResponseDto> getReviews(Long spotId) {
-        if (!spotMapper.existsById(spotId)) {
-            throw new SpotException(SpotErrorCode.SPOT_NOT_FOUND);
-        }
+        validateSpotExists(spotId);
         return spotReviewMapper.findBySpotId(spotId);
     }
 
     @Transactional
     public void updateReview(Long userId, Long reviewId, SpotReviewUpdateRequestDto requestDto) {
-        SpotReview review = spotReviewMapper.findById(reviewId)
-                .orElseThrow(() -> new SpotException(SpotErrorCode.REVIEW_NOT_FOUND)); // Assuming REVIEW_NOT_FOUND exists or use generic
-        
-        if (!review.getUserId().equals(userId)) {
-             throw new SpotException(SpotErrorCode.FORBIDDEN_ACCESS); // Assuming FORBIDDEN_ACCESS exists
-        }
+        SpotReview review = findReviewByIdOrThrow(reviewId);
+        validateReviewOwner(userId, review);
 
         if (requestDto.rating() != null) {
             review.setRating(requestDto.rating());
@@ -75,21 +65,15 @@ public class SpotReviewService {
 
     @Transactional
     public void deleteReview(Long userId, Long reviewId) {
-        SpotReview review = spotReviewMapper.findById(reviewId)
-                .orElseThrow(() -> new SpotException(SpotErrorCode.REVIEW_NOT_FOUND));
-
-        if (!review.getUserId().equals(userId)) {
-            throw new SpotException(SpotErrorCode.FORBIDDEN_ACCESS);
-        }
+        SpotReview review = findReviewByIdOrThrow(reviewId);
+        validateReviewOwner(userId, review);
 
         spotReviewMapper.delete(reviewId);
         updateSpotStats(review.getSpotId());
     }
 
     public SpotReviewStatsResponseDto getReviewStats(Long spotId) {
-        if (!spotMapper.existsById(spotId)) {
-            throw new SpotException(SpotErrorCode.SPOT_NOT_FOUND);
-        }
+        validateSpotExists(spotId);
         int count = spotReviewMapper.countBySpotId(spotId);
         BigDecimal averageRating = spotReviewMapper.getAverageRating(spotId);
         return new SpotReviewStatsResponseDto(averageRating, count);
@@ -99,5 +83,28 @@ public class SpotReviewService {
         int count = spotReviewMapper.countBySpotId(spotId);
         BigDecimal averageRating = spotReviewMapper.getAverageRating(spotId);
         spotMapper.updateReviewStats(spotId, count, averageRating);
+    }
+
+    private void validateSpotExists(Long spotId) {
+        if (!spotMapper.existsById(spotId)) {
+            throw new SpotException(SpotErrorCode.SPOT_NOT_FOUND);
+        }
+    }
+
+    private void validateDuplicateReview(Long userId, Long spotId) {
+        if (spotReviewMapper.existsBySpotIdAndUserId(spotId, userId)) {
+            throw new SpotException(SpotErrorCode.ALREADY_REVIEWED);
+        }
+    }
+
+    private SpotReview findReviewByIdOrThrow(Long reviewId) {
+        return spotReviewMapper.findById(reviewId)
+                .orElseThrow(() -> new SpotException(SpotErrorCode.REVIEW_NOT_FOUND));
+    }
+
+    private void validateReviewOwner(Long userId, SpotReview review) {
+        if (!review.getUserId().equals(userId)) {
+            throw new SpotException(SpotErrorCode.FORBIDDEN_ACCESS);
+        }
     }
 }
