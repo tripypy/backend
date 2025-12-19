@@ -1,17 +1,18 @@
 package com.ssafy.jjtrip.domain.friend.service;
 
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
+import com.ssafy.jjtrip.domain.friend.dto.response.FriendRequestResponseDto;
 import com.ssafy.jjtrip.domain.friend.entity.FriendRequest;
 import com.ssafy.jjtrip.domain.friend.entity.FriendRequestStatus;
 import com.ssafy.jjtrip.domain.friend.exception.FriendErrorCode;
 import com.ssafy.jjtrip.domain.friend.exception.FriendException;
 import com.ssafy.jjtrip.domain.friend.mapper.FriendMapper;
-import com.ssafy.jjtrip.domain.user.entity.User;
 import com.ssafy.jjtrip.domain.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -54,5 +55,13 @@ public class FriendService {
                 .status(FriendRequestStatus.PENDING)
                 .build();
         friendMapper.saveRequest(friendRequest);
+    }
+
+    public List<FriendRequestResponseDto> getReceivedRequests(Long userId) {
+        return friendMapper.findReceivedRequestsByUserId(userId);
+    }
+
+    public List<FriendRequestResponseDto> getSentRequests(Long userId) {
+        return friendMapper.findSentRequestsByUserId(userId);
     }
 }
