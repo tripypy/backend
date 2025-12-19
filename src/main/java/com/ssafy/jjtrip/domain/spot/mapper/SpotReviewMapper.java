@@ -62,4 +62,7 @@ public interface SpotReviewMapper {
 
     @Select("SELECT COALESCE(AVG(rating), 0.0) FROM spot_review WHERE spot_id = #{spotId}")
     BigDecimal getAverageRating(Long spotId);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM spot_review WHERE spot_id = #{spotId} AND user_id = #{userId})")
+    boolean existsBySpotIdAndUserId(@Param("spotId") Long spotId, @Param("userId") Long userId);
 }

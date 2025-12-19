@@ -3,6 +3,7 @@ package com.ssafy.jjtrip.domain.spot.controller;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewRequestDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewResponseDto;
+import com.ssafy.jjtrip.domain.spot.dto.SpotReviewStatsResponseDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewUpdateRequestDto;
 import com.ssafy.jjtrip.domain.spot.service.SpotReviewService;
 import jakarta.validation.Valid;
@@ -40,6 +41,11 @@ public class SpotReviewController {
     @GetMapping
     public ResponseEntity<List<SpotReviewResponseDto>> getReviews(@RequestParam Long spotId) {
         return ResponseEntity.ok(spotReviewService.getReviews(spotId));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<SpotReviewStatsResponseDto> getReviewStats(@RequestParam Long spotId) {
+        return ResponseEntity.ok(spotReviewService.getReviewStats(spotId));
     }
 
     @PatchMapping("/{reviewId}")

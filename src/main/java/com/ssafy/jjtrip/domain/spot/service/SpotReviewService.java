@@ -29,6 +29,9 @@ public class SpotReviewService {
         if (!spotMapper.existsById(requestDto.spotId())) {
             throw new SpotException(SpotErrorCode.SPOT_NOT_FOUND);
         }
+        if (spotReviewMapper.existsBySpotIdAndUserId(requestDto.spotId(), userId)) {
+            throw new SpotException(SpotErrorCode.ALREADY_REVIEWED);
+        }
 
         SpotReview review = SpotReview.builder()
                 .spotId(requestDto.spotId())
