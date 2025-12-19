@@ -4,6 +4,7 @@ import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
 import com.ssafy.jjtrip.domain.friend.dto.response.FriendRequestResponseDto;
 import com.ssafy.jjtrip.domain.friend.entity.FriendRequest;
 import com.ssafy.jjtrip.domain.friend.entity.FriendRequestStatus;
+import com.ssafy.jjtrip.domain.friend.entity.Friendship;
 import com.ssafy.jjtrip.domain.friend.exception.FriendErrorCode;
 import com.ssafy.jjtrip.domain.friend.exception.FriendException;
 import com.ssafy.jjtrip.domain.friend.mapper.FriendMapper;
@@ -63,5 +64,76 @@ public class FriendService {
 
     public List<FriendRequestResponseDto> getSentRequests(Long userId) {
         return friendMapper.findSentRequestsByUserId(userId);
+    }
+
+    @Transactional
+    public void acceptRequest(Long requestId, Long acceptingUserId) {
+        FriendRequest friendRequest = friendMapper.findRequestById(requestId)
+                .orElseThrow(() -> new FriendException(FriendErrorCode.REQUEST_NOT_FOUND));
+
+        // 요청을 수락하는 사용자가 해당 요청의 수신자인지 확인
+        if (!friendRequest.getReceiverId().equals(acceptingUserId)) {
+            throw new FriendException(FriendErrorCode.NOT_THE_RECEIVER);
+        }
+
+        // 요청 상태가 PENDING인지 확인
+        if (friendRequest.getStatus() != FriendRequestStatus.PENDING) {
+            throw new FriendException(FriendErrorCode.REQUEST_ALREADY_PROCESSED);
+        }
+
+        // friendship 테이블에 친구 관계 추가 (중복 방지를 위해 항상 작은 ID, 큰 ID 순서로 저장)
+        long userIdA = Math.min(friendRequest.getRequesterId(), friendRequest.getReceiverId());
+        long userIdB = Math.max(friendRequest.getRequesterId(), friendRequest.getReceiverId());
+
+        friendMapper.findFriendshipByUsers(userIdA, userIdB).ifPresent(friendship -> {
+            throw new FriendException(FriendErrorCode.ALREADY_FRIENDS);
+        });
+
+        Friendship friendship = Friendship.builder()
+                .userIdA(userIdA)
+                .userIdB(userIdB)
+                .build();
+        friendMapper.saveFriendship(friendship);
+
+        // 친구 요청 기록 삭제
+        friendMapper.deleteRequestById(requestId);
+    }
+
+    @Transactional
+    public void declineRequest(Long requestId, Long decliningUserId) {
+        FriendRequest friendRequest = friendMapper.findRequestById(requestId)
+                .orElseThrow(() -> new FriendException(FriendErrorCode.REQUEST_NOT_FOUND));
+
+        // 요청을 거절하는 사용자가 해당 요청의 수신자인지 확인
+        if (!friendRequest.getReceiverId().equals(decliningUserId)) {
+            throw new FriendException(FriendErrorCode.NOT_THE_RECEIVER);
+        }
+
+        // 요청 상태가 PENDING인지 확인
+        if (friendRequest.getStatus() != FriendRequestStatus.PENDING) {
+            throw new FriendException(FriendErrorCode.REQUEST_ALREADY_PROCESSED);
+        }
+
+        // 친구 요청 기록 삭제
+        friendMapper.deleteRequestById(requestId);
+    }
+
+    @Transactional
+    public void cancelSentRequest(Long requestId, Long cancellingUserId) {
+        FriendRequest friendRequest = friendMapper.findRequestById(requestId)
+                .orElseThrow(() -> new FriendException(FriendErrorCode.REQUEST_NOT_FOUND));
+
+        // 요청을 취소하는 사용자가 해당 요청의 송신자인지 확인
+        if (!friendRequest.getRequesterId().equals(cancellingUserId)) {
+            throw new FriendException(FriendErrorCode.NOT_THE_REQUESTER);
+        }
+
+        // 요청 상태가 PENDING인지 확인
+        if (friendRequest.getStatus() != FriendRequestStatus.PENDING) {
+            throw new FriendException(FriendErrorCode.REQUEST_ALREADY_PROCESSED);
+        }
+
+        // 친구 요청 기록 삭제
+        friendMapper.deleteRequestById(requestId);
     }
 }

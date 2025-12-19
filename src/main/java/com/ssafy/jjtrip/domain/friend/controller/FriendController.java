@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,5 +52,35 @@ public class FriendController {
         Long userId = userDetails.getUser().getId();
         List<FriendRequestResponseDto> sentRequests = friendService.getSentRequests(userId);
         return ResponseEntity.ok(sentRequests);
+    }
+
+    @PostMapping("/requests/{requestId}/accept")
+    public ResponseEntity<Void> acceptRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long acceptingUserId = userDetails.getUser().getId();
+        friendService.acceptRequest(requestId, acceptingUserId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build(); // 204 No Content for successful update/delete
+    }
+
+    @PostMapping("/requests/{requestId}/decline")
+    public ResponseEntity<Void> declineRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long decliningUserId = userDetails.getUser().getId();
+        friendService.declineRequest(requestId, decliningUserId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build(); // 204 No Content for successful update/delete
+    }
+
+    @DeleteMapping("/requests/sent/{requestId}")
+    public ResponseEntity<Void> cancelSentRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long cancellingUserId = userDetails.getUser().getId();
+        friendService.cancelSentRequest(requestId, cancellingUserId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
