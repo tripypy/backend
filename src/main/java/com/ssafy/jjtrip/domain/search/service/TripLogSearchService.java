@@ -19,27 +19,34 @@ public class TripLogSearchService {
         String queryString = """
         {
           "bool": {
+            "must": [
+              {
+                "multi_match": {
+                  "query": "%s",
+                  "fields": [
+                    "title^5",
+                    "content^4",
+                    "trip_location_summary^3"
+                  ],
+                  "operator": "and",
+                  "type": "best_fields"
+                }
+              }
+            ],
             "should": [
               {
                 "multi_match": {
                   "query": "%s",
-                  "fields": ["title^3", "content^2", "locationSummary^2"],
-                  "operator": "and"
-                }
-              },
-              {
-                "nested": {
-                  "path": "spots",
-                  "query": {
-                    "multi_match": {
-                      "query": "%s",
-                      "fields": ["spots.name^2", "spots.category^3", "spots.address"]
-                    }
-                  }
+                  "fields": [
+                    "title.ngram^0.6",
+                    "content.ngram^0.5",
+                    "trip_location_summary.ngram^0.3"
+                  ],
+                  "type": "best_fields"
                 }
               }
             ],
-            "minimum_should_match": 1
+            "minimum_should_match": 0
           }
         }
         """.formatted(escapeJson(keyword), escapeJson(keyword));
@@ -50,6 +57,27 @@ public class TripLogSearchService {
     }
 
     private static String escapeJson(String s) {
-        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
+        if (s == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < ' ') {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 }

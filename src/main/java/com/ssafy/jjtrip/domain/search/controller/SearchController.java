@@ -1,9 +1,7 @@
 package com.ssafy.jjtrip.domain.search.controller;
 
-import com.ssafy.jjtrip.domain.search.dto.SpotSearchDoc;
 import com.ssafy.jjtrip.domain.search.dto.TripLogSearchDoc;
 import com.ssafy.jjtrip.domain.search.dto.TripSearchDoc;
-import com.ssafy.jjtrip.domain.search.service.SpotSearchService;
 import com.ssafy.jjtrip.domain.search.service.TripLogSearchService;
 import com.ssafy.jjtrip.domain.search.service.TripSearchService;
 import lombok.RequiredArgsConstructor;
@@ -20,15 +18,8 @@ import java.util.List;
 @RequestMapping("/search")
 public class SearchController {
 
-    private final SpotSearchService spotSearchService;
     private final TripLogSearchService tripLogSearchService;
     private final TripSearchService tripSearchService;
-
-    @GetMapping("/spots")
-    public ResponseEntity<List<SpotSearchDoc>> searchSpots(@RequestParam("q") String keyword) {
-        List<SpotSearchDoc> result = spotSearchService.search(keyword);
-        return ResponseEntity.ok(result);
-    }
 
     @GetMapping("/trip-logs")
     public ResponseEntity<List<TripLogSearchDoc>> searchTripLogs(@RequestParam("q") String keyword) {
