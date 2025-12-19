@@ -17,6 +17,7 @@ import com.ssafy.jjtrip.domain.user.dto.response.ProfileImageUpdateResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserAndProfileDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserProfileResponseDto;
+import com.ssafy.jjtrip.domain.user.dto.response.UserSearchResponseDto;
 import com.ssafy.jjtrip.domain.user.entity.User;
 import com.ssafy.jjtrip.domain.user.mapper.UserMapper;
 import java.security.SecureRandom;
@@ -136,6 +137,20 @@ public class UserService {
                         .nickname(friend.getNickname())
                         .profileImageUrl(friend.getProfileImageUrl())
                         .bio(friend.getBio())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public List<UserSearchResponseDto> searchByNickname(String nickname) {
+        if (!StringUtils.hasText(nickname)) {
+            return Collections.emptyList();
+        }
+        List<User> users = userMapper.findByNicknameContaining(nickname);
+        return users.stream()
+                .map(user -> UserSearchResponseDto.builder()
+                        .id(user.getId())
+                        .nickname(user.getNickname())
+                        .profileImageUrl(user.getProfileImageUrl())
                         .build())
                 .collect(Collectors.toList());
     }

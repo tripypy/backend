@@ -7,6 +7,7 @@ import com.ssafy.jjtrip.domain.user.dto.AiTravelAnalysisDto;
 import com.ssafy.jjtrip.domain.user.dto.request.UpdateUserRequestDto;
 import com.ssafy.jjtrip.domain.user.dto.response.ProfileImageUpdateResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.PublicUserProfileResponseDto;
+import com.ssafy.jjtrip.domain.user.dto.response.UserSearchResponseDto;
 import com.ssafy.jjtrip.domain.user.dto.response.UserProfileResponseDto;
 import com.ssafy.jjtrip.domain.user.service.AiAnalysisService;
 import com.ssafy.jjtrip.domain.user.service.UserService;
@@ -34,6 +35,12 @@ public class UserController {
     private final UserService userService;
 
     private final AiAnalysisService aiAnalysisService;
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSearchResponseDto>> searchUsers(@RequestParam("nickname") String nickname) {
+        List<UserSearchResponseDto> users = userService.searchByNickname(nickname);
+        return ResponseEntity.ok(users);
+    }
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponseDto> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
