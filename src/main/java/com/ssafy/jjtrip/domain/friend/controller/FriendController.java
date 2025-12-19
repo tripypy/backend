@@ -2,16 +2,20 @@ package com.ssafy.jjtrip.domain.friend.controller;
 
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.friend.dto.request.FriendRequestRequestDto;
+import com.ssafy.jjtrip.domain.friend.dto.response.FriendRequestResponseDto;
 import com.ssafy.jjtrip.domain.friend.service.FriendService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/friends")
@@ -28,5 +32,23 @@ public class FriendController {
         Long requesterId = userDetails.getUser().getId();
         friendService.sendRequest(requesterId, requestDto.getReceiverId());
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/requests/received")
+    public ResponseEntity<List<FriendRequestResponseDto>> getReceivedRequests(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUser().getId();
+        List<FriendRequestResponseDto> receivedRequests = friendService.getReceivedRequests(userId);
+        return ResponseEntity.ok(receivedRequests);
+    }
+
+    @GetMapping("/requests/sent")
+    public ResponseEntity<List<FriendRequestResponseDto>> getSentRequests(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUser().getId();
+        List<FriendRequestResponseDto> sentRequests = friendService.getSentRequests(userId);
+        return ResponseEntity.ok(sentRequests);
     }
 }
