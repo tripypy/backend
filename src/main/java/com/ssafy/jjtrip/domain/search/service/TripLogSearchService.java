@@ -1,17 +1,23 @@
 package com.ssafy.jjtrip.domain.search.service;
 
 import com.ssafy.jjtrip.domain.search.dto.TripLogSearchDoc;
+import com.ssafy.jjtrip.domain.search.util.SearchUtil;
+import com.ssafy.jjtrip.domain.trip.entity.Trip;
+import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Service;
-import java.util.List;
 
-@RequiredArgsConstructor
+@Slf4j
 @Service
-@lombok.extern.slf4j.Slf4j
+@RequiredArgsConstructor
 public class TripLogSearchService {
 
     private final ElasticsearchOperations elasticsearchOperations;
@@ -50,7 +56,7 @@ public class TripLogSearchService {
             "minimum_should_match": 0
           }
         }
-        """.formatted(escapeJson(keyword), escapeJson(keyword));
+        """.formatted(SearchUtil.escapeJson(keyword), SearchUtil.escapeJson(keyword));
 
         Query query = new StringQuery(queryString);
         return elasticsearchOperations.search(query, TripLogSearchDoc.class)
@@ -68,35 +74,16 @@ public class TripLogSearchService {
                 doc.title(),
                 doc.content(),
                 doc.tripLocationSummary(),
-                normalizeDate(doc.tripStartDate(), false),
-                normalizeDate(doc.tripEndDate(), false),
-                normalizeDate(doc.createdAt(), true),
+                SearchUtil.normalizeDate(doc.tripStartDate(), false),
+                SearchUtil.normalizeDate(doc.tripEndDate(), false),
+                SearchUtil.normalizeDate(doc.createdAt(), true),
                 doc.imageUrls()
         );
     }
 
-    private String normalizeDate(String value, boolean isDateTime) {
-        if (value == null) return null;
-        if (value.matches("^\\d+$")) {
-            try {
-                long millis = Long.parseLong(value);
-                java.time.ZonedDateTime zdt = java.time.Instant.ofEpochMilli(millis)
-                        .atZone(java.time.ZoneId.systemDefault());
-                if (isDateTime) {
-                    return zdt.toLocalDateTime().toString();
-                } else {
-                    return zdt.toLocalDate().toString();
-                }
-            } catch (Exception e) {
-                return value;
-            }
-        }
-        return value;
-    }
-
-    public void saveTripLog(com.ssafy.jjtrip.domain.triplog.entity.TripLog tripLog, com.ssafy.jjtrip.domain.trip.entity.Trip trip, List<String> imageUrls) {
-        if (tripLog.getVisibility() != com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility.PUBLIC ||
-            trip.getVisibility() != com.ssafy.jjtrip.domain.trip.entity.TripVisibility.PUBLIC) {
+    public void saveTripLog(TripLog tripLog, Trip trip, List<String> imageUrls) {
+        if (tripLog.getVisibility() != TripLogVisibility.PUBLIC ||
+            trip.getVisibility() != TripVisibility.PUBLIC) {
             deleteTripLog(tripLog.getId());
             return;
         }
@@ -123,30 +110,5 @@ public class TripLogSearchService {
         log.info("Deleting trip log from ES: {}", logId);
         elasticsearchOperations.delete(String.valueOf(logId), TripLogSearchDoc.class);
         log.info("Deleted trip log from ES: {}", logId);
-    }
-
-    private static String escapeJson(String s) {
-        if (s == null) return "";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '"' -> sb.append("\\\"");
-                case '\\' -> sb.append("\\\\");
-                case '\b' -> sb.append("\\b");
-                case '\f' -> sb.append("\\f");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                default -> {
-                    if (c < ' ') {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-                }
-            }
-        }
-        return sb.toString();
     }
 }
