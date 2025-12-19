@@ -107,6 +107,21 @@ CREATE TABLE `spot` (
   UNIQUE KEY `uk_kakao_place_id` (`kakao_place_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 장소 리뷰 (Spot Review)
+CREATE TABLE `spot_review` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `spot_id` BIGINT NOT NULL,
+  `user_id` BIGINT NOT NULL,
+  `rating` DECIMAL(2,1) NOT NULL COMMENT '평점 (0.5 단위, 0.5 ~ 5.0)',
+  `content` TEXT,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_review_spot_user` (`spot_id`, `user_id`),
+  CONSTRAINT `fk_review_spot` FOREIGN KEY (`spot_id`) REFERENCES `spot` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ==========================================
 -- ✈️ 3. 여행 계획 (Trip Domain)
 -- ==========================================
