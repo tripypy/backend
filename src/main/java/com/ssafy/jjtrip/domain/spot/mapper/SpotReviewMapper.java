@@ -48,6 +48,65 @@ public interface SpotReviewMapper {
     })
     List<SpotReviewResponseDto> findBySpotId(Long spotId);
 
+    @Select("""
+            SELECT
+                r.id,
+                r.spot_id as spotId,
+                r.user_id as userId,
+                u.nickname as userNickname,
+                u.profile_image_url as userProfileImage,
+                r.rating,
+                r.content,
+                r.created_at as createdAt,
+                r.updated_at as updatedAt
+            FROM spot_review r
+            JOIN user u ON r.user_id = u.id
+            WHERE r.spot_id = #{spotId} AND r.user_id = #{userId}
+            """)
+    @ConstructorArgs({
+            @Arg(column = "id", javaType = Long.class),
+            @Arg(column = "spotId", javaType = Long.class),
+            @Arg(column = "userId", javaType = Long.class),
+            @Arg(column = "userNickname", javaType = String.class),
+            @Arg(column = "userProfileImage", javaType = String.class),
+            @Arg(column = "rating", javaType = BigDecimal.class),
+            @Arg(column = "content", javaType = String.class),
+            @Arg(column = "createdAt", javaType = LocalDateTime.class),
+            @Arg(column = "updatedAt", javaType = LocalDateTime.class)
+    })
+    Optional<SpotReviewResponseDto> findBySpotIdAndUserId(@Param("spotId") Long spotId, @Param("userId") Long userId);
+
+    @Select("""
+            <script>
+            SELECT
+                r.id,
+                r.spot_id as spotId,
+                r.user_id as userId,
+                u.nickname as userNickname,
+                u.profile_image_url as userProfileImage,
+                r.rating,
+                r.content,
+                r.created_at as createdAt,
+                r.updated_at as updatedAt
+            FROM spot_review r
+            JOIN user u ON r.user_id = u.id
+            WHERE r.user_id = #{userId}
+            ORDER BY r.created_at DESC
+            </script>
+            """)
+    @ConstructorArgs({
+            @Arg(column = "id", javaType = Long.class),
+            @Arg(column = "spotId", javaType = Long.class),
+            @Arg(column = "userId", javaType = Long.class),
+            @Arg(column = "userNickname", javaType = String.class),
+            @Arg(column = "userProfileImage", javaType = String.class),
+            @Arg(column = "rating", javaType = BigDecimal.class),
+            @Arg(column = "content", javaType = String.class),
+            @Arg(column = "createdAt", javaType = LocalDateTime.class),
+            @Arg(column = "updatedAt", javaType = LocalDateTime.class)
+    })
+    List<SpotReviewResponseDto> findByUserId(Long userId);
+
     @Select("SELECT * FROM spot_review WHERE id = #{id}")
     Optional<SpotReview> findById(Long id);
 

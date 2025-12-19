@@ -2,17 +2,51 @@ package com.ssafy.jjtrip.domain.search.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Document(indexName = "trit_trip")
 public record TripSearchDoc(
-    @JsonProperty("id") Long id,
+    @Field(name = "trip_id")
+    @JsonProperty("trip_id") Long tripId,
+
+    @Field(name = "user_id")
+    @JsonProperty("user_id") Long userId,
+
+    @Field(name = "title")
     @JsonProperty("title") String title,
-    @JsonProperty("nickname") String nickname,
-    @JsonProperty("profile_image_url") String profileImageUrl,
-    @JsonProperty("image_url") String imageUrl,
+
+    @Field(name = "location_summary")
+    @JsonProperty("location_summary") String locationSummary,
+
+    @Field(name = "start_date")
     @JsonProperty("start_date") LocalDate startDate,
+
+    @Field(name = "end_date")
     @JsonProperty("end_date") LocalDate endDate,
-    @JsonProperty("createdAt") LocalDateTime createdAt
-) {}
+
+    @Field(name = "created_at")
+    @JsonProperty("created_at") LocalDateTime createdAt,
+
+    @Field(name = "spot_names")
+    @JsonProperty("spot_names") List<String> spotNames,
+
+    @Field(name = "spot_categories")
+    @JsonProperty("spot_categories") List<String> spotCategories,
+
+    @Field(name = "spots_preview")
+    @JsonProperty("spots_preview") List<SpotPreview> spotsPreview
+) {
+    public record SpotPreview(
+        @Field(name = "spot_id")
+        @JsonProperty("spot_id") Long spotId,
+
+        @Field(name = "name")
+        @JsonProperty("name") String name,
+
+        @Field(name = "category")
+        @JsonProperty("category") String category
+    ) {}
+}
