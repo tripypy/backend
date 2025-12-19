@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.spot.service;
 
+import com.ssafy.jjtrip.domain.spot.dto.SpotReviewListResponseDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewRequestDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewResponseDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewStatsResponseDto;
@@ -42,9 +43,32 @@ public class SpotReviewService {
         return review.getId();
     }
 
-    public List<SpotReviewResponseDto> getReviews(Long spotId) {
+    public SpotReviewListResponseDto getReviews(Long spotId, Long userId) {
         validateSpotExists(spotId);
-        return spotReviewMapper.findBySpotId(spotId);
+
+        SpotReviewResponseDto myReview = null;
+        if (userId != null) {
+            myReview = spotReviewMapper.findBySpotIdAndUserId(spotId, userId).orElse(null);
+        }
+
+        List<SpotReviewResponseDto> reviews = spotReviewMapper.findBySpotId(spotId);
+
+        if (myReview != null) {
+            Long myReviewId = myReview.id();
+            reviews.removeIf(r -> r.id().equals(myReviewId));
+        }
+
+        return new SpotReviewListResponseDto(myReview, reviews);
+    }
+
+    public List<SpotReviewResponseDto> getMyReviews(Long userId, Long spotId) {
+        if (spotId != null) {
+            validateSpotExists(spotId);
+            return spotReviewMapper.findBySpotIdAndUserId(spotId, userId)
+                    .map(List::of)
+                    .orElse(List.of());
+        }
+        return spotReviewMapper.findByUserId(userId);
     }
 
     @Transactional

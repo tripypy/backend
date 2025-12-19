@@ -1,6 +1,7 @@
 package com.ssafy.jjtrip.domain.spot.controller;
 
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
+import com.ssafy.jjtrip.domain.spot.dto.SpotReviewListResponseDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewRequestDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewResponseDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotReviewStatsResponseDto;
@@ -38,9 +39,21 @@ public class SpotReviewController {
         return ResponseEntity.created(URI.create("/spot-reviews/" + reviewId)).build();
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<List<SpotReviewResponseDto>> getMyReviews(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Long spotId
+    ) {
+        return ResponseEntity.ok(spotReviewService.getMyReviews(userDetails.getUser().getId(), spotId));
+    }
+
     @GetMapping
-    public ResponseEntity<List<SpotReviewResponseDto>> getReviews(@RequestParam Long spotId) {
-        return ResponseEntity.ok(spotReviewService.getReviews(spotId));
+    public ResponseEntity<SpotReviewListResponseDto> getReviews(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam Long spotId
+    ) {
+        Long userId = userDetails != null ? userDetails.getUser().getId() : null;
+        return ResponseEntity.ok(spotReviewService.getReviews(spotId, userId));
     }
 
     @GetMapping("/stats")
