@@ -14,7 +14,8 @@ public enum FriendErrorCode implements ErrorCode {
     REQUEST_ALREADY_EXISTS(HttpStatus.CONFLICT, "FRIEND-003", "처리 대기 중이거나 이미 수락된 친구 요청이 존재합니다."),
     REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "FRIEND-004", "존재하지 않는 친구 요청입니다."),
     NOT_THE_RECEIVER(HttpStatus.FORBIDDEN, "FRIEND-005", "친구요청을 받은 사용자만 처리할 수 있습니다."),
-    NOT_THE_REQUESTER(HttpStatus.FORBIDDEN, "FRIEND-006", "친구요청을 보낸 사용자만 취소할 수 있습니다.");
+    NOT_THE_REQUESTER(HttpStatus.FORBIDDEN, "FRIEND-006", "친구요청을 보낸 사용자만 취소할 수 있습니다."),
+    REQUEST_ALREADY_PROCESSED(HttpStatus.CONFLICT, "FRIEND-007", "이미 처리된 요청입니다.");
 
     private final HttpStatus status;
     private final String code;

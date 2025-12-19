@@ -32,7 +32,8 @@ public interface FriendMapper {
     Optional<Friendship> findFriendshipByUsers(@Param("userIdA") Long userIdA, @Param("userIdB") Long userIdB);
 
     // 3. ID로 친구 요청 조회
-
+    @Select("SELECT id, requester_id, receiver_id, status, created_at FROM friend_request WHERE id = #{requestId}")
+    Optional<FriendRequest> findRequestById(@Param("requestId") Long requestId);
 
     // 4. 받은 친구 요청 목록 조회
     @Select("SELECT fr.id as requestId, fr.status, fr.created_at as createdAt, " +
@@ -66,9 +67,15 @@ public interface FriendMapper {
             @Result(property = "user.profileImageUrl", column = "profileImageUrl")
     })
     List<FriendRequestResponseDto> findSentRequestsByUserId(@Param("userId") Long userId);
-    
+
     // 6. 친구 요청 삭제
+    @Delete("DELETE FROM friend_request WHERE id = #{requestId}")
+    int deleteRequestById(@Param("requestId") Long requestId);
+    
     // 7. 친구 관계 생성
+    @Insert("INSERT INTO friendship (user_id_a, user_id_b) VALUES (#{userIdA}, #{userIdB})")
+    void saveFriendship(Friendship friendship);
+
     // 8. 친구 관계 삭제
     // 9. 친구 목록 조회
     // 10. 친구 피드 목록 조회
