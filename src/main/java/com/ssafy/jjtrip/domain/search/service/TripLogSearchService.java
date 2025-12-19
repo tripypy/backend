@@ -11,6 +11,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
+@lombok.extern.slf4j.Slf4j
 public class TripLogSearchService {
 
     private final ElasticsearchOperations elasticsearchOperations;
@@ -53,7 +54,75 @@ public class TripLogSearchService {
 
         Query query = new StringQuery(queryString);
         return elasticsearchOperations.search(query, TripLogSearchDoc.class)
-                .stream().map(SearchHit::getContent).toList();
+                .stream()
+                .map(SearchHit::getContent)
+                .map(this::normalizeDoc)
+                .toList();
+    }
+
+    private TripLogSearchDoc normalizeDoc(TripLogSearchDoc doc) {
+        return new TripLogSearchDoc(
+                doc.logId(),
+                doc.tripId(),
+                doc.userId(),
+                doc.title(),
+                doc.content(),
+                doc.tripLocationSummary(),
+                normalizeDate(doc.tripStartDate(), false),
+                normalizeDate(doc.tripEndDate(), false),
+                normalizeDate(doc.createdAt(), true),
+                doc.imageUrls()
+        );
+    }
+
+    private String normalizeDate(String value, boolean isDateTime) {
+        if (value == null) return null;
+        if (value.matches("^\\d+$")) {
+            try {
+                long millis = Long.parseLong(value);
+                java.time.ZonedDateTime zdt = java.time.Instant.ofEpochMilli(millis)
+                        .atZone(java.time.ZoneId.systemDefault());
+                if (isDateTime) {
+                    return zdt.toLocalDateTime().toString();
+                } else {
+                    return zdt.toLocalDate().toString();
+                }
+            } catch (Exception e) {
+                return value;
+            }
+        }
+        return value;
+    }
+
+    public void saveTripLog(com.ssafy.jjtrip.domain.triplog.entity.TripLog tripLog, com.ssafy.jjtrip.domain.trip.entity.Trip trip, List<String> imageUrls) {
+        if (tripLog.getVisibility() != com.ssafy.jjtrip.domain.triplog.entity.TripLogVisibility.PUBLIC ||
+            trip.getVisibility() != com.ssafy.jjtrip.domain.trip.entity.TripVisibility.PUBLIC) {
+            deleteTripLog(tripLog.getId());
+            return;
+        }
+
+        TripLogSearchDoc doc = new TripLogSearchDoc(
+                tripLog.getId(),
+                trip.getId(),
+                trip.getUserId(),
+                tripLog.getTitle(),
+                tripLog.getContent(),
+                trip.getLocationSummary(),
+                trip.getStartDate() != null ? trip.getStartDate().toString() : null,
+                trip.getEndDate() != null ? trip.getEndDate().toString() : null,
+                tripLog.getCreatedAt() != null ? tripLog.getCreatedAt().toString() : null,
+                imageUrls
+        );
+
+        log.info("Saving trip log to ES: {}", tripLog.getId());
+        elasticsearchOperations.save(doc);
+        log.info("Saved trip log to ES: {}", tripLog.getId());
+    }
+
+    public void deleteTripLog(Long logId) {
+        log.info("Deleting trip log from ES: {}", logId);
+        elasticsearchOperations.delete(String.valueOf(logId), TripLogSearchDoc.class);
+        log.info("Deleted trip log from ES: {}", logId);
     }
 
     private static String escapeJson(String s) {

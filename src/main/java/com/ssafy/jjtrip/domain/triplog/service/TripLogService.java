@@ -2,6 +2,8 @@ package com.ssafy.jjtrip.domain.triplog.service;
 
 import com.ssafy.jjtrip.common.dto.PageDto;
 import com.ssafy.jjtrip.common.dto.SliceDto;
+import com.ssafy.jjtrip.domain.search.service.TripLogSearchService;
+import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.service.TripService;
 import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogCreateRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogUpdateRequestDto;
@@ -34,6 +36,7 @@ public class TripLogService {
     private final TripService tripService;
     private final TripLogCommentService tripLogCommentService;
     private final TripLogLikeService tripLogLikeService;
+    private final TripLogSearchService tripLogSearchService;
 
     @Transactional
     public TripLogCreateResponseDto createTripLog(Long userId, TripLogCreateRequestDto requestDto) {
@@ -54,6 +57,11 @@ public class TripLogService {
 
         tripLogMapper.insertTripLog(tripLog);
         processAndSaveImages(tripLog.getId(), userId, requestDto.content());
+
+        // Sync ES
+        Trip trip = tripService.getTripDetail(requestDto.tripId(), userId);
+        List<String> imageUrls = extractImageUrls(tripLog.getContent());
+        tripLogSearchService.saveTripLog(tripLog, trip, imageUrls);
 
         return new TripLogCreateResponseDto(tripLog.getId());
     }
@@ -109,12 +117,22 @@ public class TripLogService {
         return TripLogDetailResponseDto.from(baseInfo, images, comments, likeCount, commentCount);
     }
     
-
+    // Private helper for extracting URLs to avoid duplicating regex logic
+    private List<String> extractImageUrls(String content) {
+        if (content == null || content.isBlank()) return Collections.emptyList();
+        List<String> urls = new java.util.ArrayList<>();
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("!\\[.*?\\]\\((.*?)\\)");
+        java.util.regex.Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            urls.add(matcher.group(1));
+        }
+        return urls;
+    }
 
     @Transactional
     public void updateTripLog(Long logId, Long userId, TripLogUpdateRequestDto requestDto) {
         validateLogAuthor(logId, userId);
-
+        
         TripLog tripLog = TripLog.builder()
                 .id(logId)
                 .title(requestDto.title())
@@ -128,6 +146,13 @@ public class TripLogService {
             tripLogMapper.deleteLogImages(logId);
             processAndSaveImages(logId, userId, requestDto.content());
         }
+        
+        // Sync ES
+        // Need full TripLog and Trip data
+        TripLog updatedLog = tripLogMapper.findById(logId).orElseThrow(); 
+        Trip trip = tripService.getTripDetail(updatedLog.getTripId(), userId);
+        List<String> imageUrls = extractImageUrls(updatedLog.getContent());
+        tripLogSearchService.saveTripLog(updatedLog, trip, imageUrls);
     }
 
     private void processAndSaveImages(Long logId, Long userId, String content) {
@@ -154,6 +179,7 @@ public class TripLogService {
     public void deleteTripLog(Long logId, Long userId) {
         validateLogAuthor(logId, userId);
         tripLogMapper.deleteTripLog(logId);
+        tripLogSearchService.deleteTripLog(logId);
     }
 
     private void validateLogAuthor(Long logId, Long userId) {
