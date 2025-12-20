@@ -93,4 +93,14 @@ public class FriendController {
         List<SimpleUserInfoDto> friendList = friendService.getFriendList(userId);
         return ResponseEntity.ok(friendList);
     }
+
+    @DeleteMapping("/{friendId}")
+    public ResponseEntity<Void> deleteFriend(
+            @PathVariable Long friendId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long myUserId = userDetails.getUser().getId();
+        friendService.deleteFriend(myUserId, friendId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }

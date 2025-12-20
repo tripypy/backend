@@ -121,4 +121,20 @@ public class FriendService {
     public List<SimpleUserInfoDto> getFriendList(Long userId) {
         return friendMapper.findFriendsByUserId(userId);
     }
+
+    @Transactional
+    public void deleteFriend(Long myUserId, Long friendId) {
+        // 1. 친구 ID가 유효한지 검증
+        userMapper.findById(friendId)
+                .orElseThrow(() -> new FriendException(AuthErrorCode.USER_NOT_FOUND));
+
+        // 2. 친구 관계가 존재하는지 검증
+        long userIdA = Math.min(myUserId, friendId);
+        long userIdB = Math.max(myUserId, friendId);
+        friendMapper.findFriendshipByUsers(userIdA, userIdB)
+                .orElseThrow(() -> new FriendException(FriendErrorCode.FRIENDSHIP_NOT_FOUND));
+
+        // 3. 친구 관계 삭제
+        friendMapper.deleteFriendship(userIdA, userIdB);
+    }
 }
