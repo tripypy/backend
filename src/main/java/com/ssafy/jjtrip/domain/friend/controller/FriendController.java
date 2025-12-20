@@ -3,6 +3,7 @@ package com.ssafy.jjtrip.domain.friend.controller;
 import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.friend.dto.request.FriendRequestRequestDto;
 import com.ssafy.jjtrip.domain.friend.dto.response.FriendRequestResponseDto;
+import com.ssafy.jjtrip.domain.friend.dto.response.SimpleUserInfoDto;
 import com.ssafy.jjtrip.domain.friend.service.FriendService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -82,5 +83,14 @@ public class FriendController {
         Long cancellingUserId = userDetails.getUser().getId();
         friendService.cancelSentRequest(requestId, cancellingUserId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<SimpleUserInfoDto>> getFriendList(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUser().getId();
+        List<SimpleUserInfoDto> friendList = friendService.getFriendList(userId);
+        return ResponseEntity.ok(friendList);
     }
 }

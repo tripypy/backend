@@ -76,5 +76,16 @@ public interface FriendMapper {
 
 
     // 9. 친구 목록 조회
+    @Select("SELECT u.id AS userId, u.nickname, u.profile_image_url AS profileImageUrl " +
+            "FROM friendship f " +
+            "JOIN user u ON (f.user_id_a = #{userId} AND u.id = f.user_id_b) OR (f.user_id_b = #{userId} AND u.id = f.user_id_a) " +
+            "WHERE f.user_id_a = #{userId} OR f.user_id_b = #{userId}")
+    @Results({
+            @Result(property = "userId", column = "userId"),
+            @Result(property = "nickname", column = "nickname"),
+            @Result(property = "profileImageUrl", column = "profileImageUrl")
+    })
+    List<SimpleUserInfoDto> findFriendsByUserId(@Param("userId") Long userId);
+
     // 10. 친구 피드 목록 조회
 }
