@@ -37,7 +37,7 @@ public class TripController {
     @PostMapping
     public ResponseEntity<?> createTrip(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Trip createdTrip = tripService.createTrip(userDetails.getUser().getId());
-        TripDetailResponseDto responseDto = TripDetailResponseDto.from(createdTrip);
+        TripDetailResponseDto responseDto = TripDetailResponseDto.from(createdTrip, userDetails.getUser().getId());
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
@@ -60,7 +60,7 @@ public class TripController {
     public ResponseEntity<?> getTripDetail(@PathVariable Long tripId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = (userDetails != null) ? userDetails.getUser().getId() : null;
         Trip trip = tripService.getTripDetail(tripId, userId);
-        TripDetailResponseDto responseDto = TripDetailResponseDto.from(trip);
+        TripDetailResponseDto responseDto = TripDetailResponseDto.from(trip, userId);
         return ResponseEntity.ok(responseDto);
     }
 
