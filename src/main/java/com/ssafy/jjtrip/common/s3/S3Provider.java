@@ -40,9 +40,13 @@ public class S3Provider {
     public PresignedUrlResponseDto generatePresignedUrl(String prefix, String fileName) {
         String key = createKey(prefix, fileName);
 
+        String contentType = determineContentType(fileName);
+
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
+                .contentType(contentType)
+                .acl("public-read")
                 .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -51,7 +55,21 @@ public class S3Provider {
                 .build();
 
         String presignedUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
-        return new PresignedUrlResponseDto(presignedUrl);
+        String url = baseUrl + "/" + key;
+        
+        return new PresignedUrlResponseDto(presignedUrl, url, key);
+    }
+
+    private String determineContentType(String fileName) {
+        String ext = StringUtils.getFilenameExtension(fileName);
+        if (ext == null) return "application/octet-stream";
+        return switch (ext.toLowerCase()) {
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "gif" -> "image/gif";
+            case "webp" -> "image/webp";
+            default -> "application/octet-stream";
+        };
     }
 
     public String upload(MultipartFile file, String prefix) {
