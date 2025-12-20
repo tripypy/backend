@@ -121,6 +121,48 @@ public interface TripLogMapper {
 
     @Select("""
             <script>
+            SELECT
+                tl.id as logId,
+                u.id as authorId,
+                u.nickname as authorNickname,
+                u.profile_image_url as authorImageUrl,
+                tl.title,
+                tl.content,
+                t.location_summary as locationSummary,
+                (SELECT COUNT(*) FROM log_like ll WHERE ll.log_id = tl.id) as likeCount,
+                (SELECT COUNT(*) FROM log_comment lc WHERE lc.log_id = tl.id) as commentCount,
+                <if test="memberId != null">
+                    EXISTS(SELECT 1 FROM log_like ll WHERE ll.log_id = tl.id AND ll.user_id = #{memberId}) as liked,
+                </if>
+                <if test="memberId == null">
+                    0 as liked,
+                </if>
+                tl.created_at as createdAt
+            FROM
+                trip_log tl
+            JOIN
+                trip t ON tl.trip_id = t.id
+            JOIN
+                user u ON t.user_id = u.id
+            WHERE
+                tl.visibility = 'PUBLIC'
+                AND EXISTS (
+                    SELECT 1 FROM trip_item ti 
+                    WHERE ti.trip_id = t.id 
+                    AND ti.spot_id = #{spotId}
+                )
+                <if test="cursor != null">
+                    AND tl.id &lt; #{cursor}
+                </if>
+            ORDER BY
+                tl.id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+    List<TripLogFeedResponseDto.FeedData> findTripLogsBySpotId(@Param("spotId") Long spotId, @Param("cursor") Long cursor, @Param("limit") int limit, @Param("memberId") Long memberId);
+
+    @Select("""
+            <script>
             SELECT COUNT(*)
             FROM trip_log tl
             JOIN trip t ON tl.trip_id = t.id
