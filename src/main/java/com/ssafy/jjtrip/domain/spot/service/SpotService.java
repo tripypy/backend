@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.spot.service;
 
+import com.ssafy.jjtrip.domain.spot.dto.SpotUpsertResult;
 import com.ssafy.jjtrip.domain.spot.entity.Spot;
 import com.ssafy.jjtrip.domain.spot.exception.SpotErrorCode;
 import com.ssafy.jjtrip.domain.spot.exception.SpotException;
@@ -60,6 +61,15 @@ public class SpotService {
                 .orElseGet(() -> {
                     spotMapper.insert(spot);
                     return spot;
+                });
+    }
+
+    public SpotUpsertResult upsertSpot(Spot spot) {
+        return spotMapper.findByKakaoPlaceId(spot.getKakaoPlaceId())
+                .map(existingSpot -> new SpotUpsertResult(existingSpot, false))
+                .orElseGet(() -> {
+                    spotMapper.insert(spot);
+                    return new SpotUpsertResult(spot, true);
                 });
     }
 

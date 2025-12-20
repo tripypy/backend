@@ -2,9 +2,11 @@ package com.ssafy.jjtrip.domain.spot.controller;
 
 import com.ssafy.jjtrip.domain.spot.dto.SpotRequestDto;
 import com.ssafy.jjtrip.domain.spot.dto.SpotResponseDto;
+import com.ssafy.jjtrip.domain.spot.dto.SpotUpsertResult;
 import com.ssafy.jjtrip.domain.spot.entity.Spot;
 import com.ssafy.jjtrip.domain.spot.service.SpotService;
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +36,14 @@ public class SpotController {
     @PostMapping
     public ResponseEntity<SpotResponseDto> createSpot(@RequestBody @Valid SpotRequestDto spotRequestDto) {
         Spot spot = spotRequestDto.toEntity();
-        Spot createdSpot = spotService.createSpot(spot);
-        return ResponseEntity.created(java.net.URI.create("/spots/" + createdSpot.getId()))
-                .body(SpotResponseDto.from(createdSpot));
+        SpotUpsertResult result = spotService.upsertSpot(spot);
+        
+        if (result.isNew()) {
+            return ResponseEntity.created(URI.create("/spots/" + result.spot().getId()))
+                    .body(SpotResponseDto.from(result.spot()));
+        } else {
+            return ResponseEntity.ok(SpotResponseDto.from(result.spot()));
+        }
     }
 
     @GetMapping("/{spotId}")
