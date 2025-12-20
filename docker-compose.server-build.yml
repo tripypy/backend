@@ -26,6 +26,9 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_BUCKET_NAME: ${AWS_BUCKET_NAME}
+
+      OPEN_AI_API_KEY: ${OPEN_AI_API_KEY}
 
     depends_on:
       mysql:
@@ -109,7 +112,10 @@ services:
       start_period: 10s
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    build:
+      context: .
+      dockerfile: deploy/elasticsearch/Dockerfile
+    image: trit-elasticsearch:8.13.4-nori
     container_name: trit-es
     restart: unless-stopped
     environment:
