@@ -53,7 +53,7 @@ public class UserService {
         List<Trip> allTrips = tripMapper.selectByUserIdAndStatuses(userId, allStatuses);
 
         List<TripResponseDto> tripOverviews = mapToTripResponseDtos(allTrips, userId);
-        List<TripDetailResponseDto> completedTripDetails = mapToTripDetailResponseDtos(allTrips);
+        List<TripDetailResponseDto> completedTripDetails = mapToTripDetailResponseDtos(allTrips, userId);
         List<TripLogSummaryDto> logs = tripLogMapper.findSummariesByUserId(userId);
 
         return UserProfileResponseDto.builder()
@@ -83,7 +83,7 @@ public class UserService {
         List<Trip> publicTrips = tripMapper.selectByUserIdAndStatuses(userId, publicStatuses);
 
         List<TripResponseDto> tripOverviews = mapToTripResponseDtos(publicTrips, userId);
-        List<TripDetailResponseDto> completedTripDetails = mapToTripDetailResponseDtos(publicTrips);
+        List<TripDetailResponseDto> completedTripDetails = mapToTripDetailResponseDtos(publicTrips, null);
         List<TripLogSummaryDto> logs = tripLogMapper.findSummariesByUserId(userId);
 
         return PublicUserProfileResponseDto.builder()
@@ -119,12 +119,12 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    private List<TripDetailResponseDto> mapToTripDetailResponseDtos(List<Trip> trips) {
+    private List<TripDetailResponseDto> mapToTripDetailResponseDtos(List<Trip> trips, Long viewerId) {
         return trips.stream()
                 .filter(trip -> trip.getStatus() == TripStatus.COMPLETED)
                 .map(trip -> {
                     trip.setTripItems(tripMapper.selectItemsWithSpotsByTripId(trip.getId()));
-                    return TripDetailResponseDto.from(trip);
+                    return TripDetailResponseDto.from(trip, viewerId);
                 })
                 .collect(Collectors.toList());
     }
