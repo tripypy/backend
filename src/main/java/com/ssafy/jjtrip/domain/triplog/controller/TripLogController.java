@@ -7,6 +7,7 @@ import com.ssafy.jjtrip.common.security.CustomUserDetails;
 import com.ssafy.jjtrip.domain.triplog.dto.request.ImageUploadRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogCommentRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogCreateRequestDto;
+
 import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogUpdateRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCreateResponseDto;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogFeedResponseDto;
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -58,8 +60,8 @@ public class TripLogController {
         return ResponseEntity.created(URI.create("/trip-logs/" + response.logId())).body(response);
     }
 
-    @GetMapping
-    public ResponseEntity<PageDto<TripLogFeedResponseDto>> getUserTripLogs(
+    @GetMapping(params = "userId")
+    public ResponseEntity<PageDto<TripLogFeedResponseDto>> getTripLogsByUser(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
@@ -67,6 +69,17 @@ public class TripLogController {
     ) {
         final Long memberId = (userDetails != null) ? userDetails.getUser().getId() : null;
         return ResponseEntity.ok(tripLogService.getUserTripLogs(userId, page, limit, memberId));
+    }
+
+    @GetMapping(params = "spotId")
+    public ResponseEntity<SliceDto<TripLogFeedResponseDto>> getTripLogsBySpot(
+            @RequestParam Long spotId,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int limit,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        final Long memberId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        return ResponseEntity.ok(tripLogService.getTripLogsBySpot(spotId, cursor, limit, memberId));
     }
 
     @GetMapping("/feed")

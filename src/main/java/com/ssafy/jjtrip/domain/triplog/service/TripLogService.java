@@ -85,6 +85,25 @@ public class TripLogService {
         return new SliceDto<>(tripLogs, nextCursor, hasNext);
     }
 
+    public SliceDto<TripLogFeedResponseDto> getTripLogsBySpot(Long spotId, Long cursor, int limit, Long memberId) {
+        final int queryLimit = limit + 1;
+        List<TripLogFeedResponseDto.FeedData> tripLogsData = tripLogMapper.findTripLogsBySpotId(spotId, cursor, queryLimit, memberId);
+
+        boolean hasNext = tripLogsData.size() > limit;
+        if (hasNext) {
+            tripLogsData.remove(limit);
+        }
+
+        Long nextCursor = null;
+        if (!tripLogsData.isEmpty()) {
+            nextCursor = tripLogsData.get(tripLogsData.size() - 1).logId();
+        }
+
+        List<TripLogFeedResponseDto> tripLogs = mapToTripLogFeedResponse(tripLogsData);
+
+        return new SliceDto<>(tripLogs, nextCursor, hasNext);
+    }
+
     public PageDto<TripLogFeedResponseDto> getUserTripLogs(Long authorId, int page, int size, Long memberId) {
         userValidateService.validateUserExists(authorId);
 
