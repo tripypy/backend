@@ -2,6 +2,7 @@ package com.ssafy.jjtrip.domain.friend.service;
 
 import com.ssafy.jjtrip.domain.auth.exception.AuthErrorCode;
 import com.ssafy.jjtrip.domain.friend.dto.response.FriendRequestResponseDto;
+import com.ssafy.jjtrip.domain.friend.dto.response.SimpleUserInfoDto;
 import com.ssafy.jjtrip.domain.friend.entity.FriendRequest;
 import com.ssafy.jjtrip.domain.friend.entity.Friendship;
 import com.ssafy.jjtrip.domain.friend.exception.FriendErrorCode;
@@ -70,7 +71,7 @@ public class FriendService {
         if (!friendRequest.getReceiverId().equals(acceptingUserId)) {
             throw new FriendException(FriendErrorCode.NOT_THE_RECEIVER);
         }
-
+        
         // friendship 테이블에 친구 관계 추가 (중복 방지를 위해 항상 작은 ID, 큰 ID 순서로 저장)
         long userIdA = Math.min(friendRequest.getRequesterId(), friendRequest.getReceiverId());
         long userIdB = Math.max(friendRequest.getRequesterId(), friendRequest.getReceiverId());
@@ -115,5 +116,9 @@ public class FriendService {
 
         // 친구 요청 기록 삭제
         friendMapper.deleteRequestById(requestId);
+    }
+
+    public List<SimpleUserInfoDto> getFriendList(Long userId) {
+        return friendMapper.findFriendsByUserId(userId);
     }
 }
