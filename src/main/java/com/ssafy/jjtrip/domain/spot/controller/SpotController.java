@@ -58,6 +58,12 @@ public class SpotController {
         return ResponseEntity.ok(SpotResponseDto.from(updatedSpot));
     }
 
+    @PostMapping("/{spotId}/thumbnail")
+    public ResponseEntity<SpotResponseDto> updateSpotThumbnail(@PathVariable Long spotId) {
+        Spot updatedSpot = spotService.updateSpotThumbnailWithGoogle(spotId);
+        return ResponseEntity.ok(SpotResponseDto.from(updatedSpot));
+    }
+
     @DeleteMapping("/{spotId}")
     public ResponseEntity<Void> deleteSpot(@PathVariable Long spotId) {
         spotService.deleteSpot(spotId);

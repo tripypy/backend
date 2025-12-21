@@ -1,5 +1,8 @@
 package com.ssafy.jjtrip.domain.spot.service;
 
+import com.ssafy.jjtrip.common.google.GoogleMapsClient;
+import com.ssafy.jjtrip.common.google.dto.GoogleMapsDto.Place;
+import com.ssafy.jjtrip.common.s3.S3Provider;
 import com.ssafy.jjtrip.domain.spot.dto.SpotUpsertResult;
 import com.ssafy.jjtrip.domain.spot.entity.Spot;
 import com.ssafy.jjtrip.domain.spot.exception.SpotErrorCode;
@@ -21,15 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class SpotService {
 
     private final SpotMapper spotMapper;
-
-
-    public Spot createSpot(Spot spot) {
-        if (spotMapper.findByKakaoPlaceId(spot.getKakaoPlaceId()).isPresent()) {
-            throw new SpotException(SpotErrorCode.ALREADY_EXISTS);
-        }
-        spotMapper.insert(spot);
-        return spot;
-    }
+    private final S3Provider s3Provider;
+    private final GoogleMapsClient googleMapsClient;
 
     public Spot getSpotById(Long spotId) {
         return spotMapper.findById(spotId)
@@ -94,5 +90,54 @@ public class SpotService {
     @CacheEvict(value = "hotPlaces", allEntries = true)
     public void evictHotPlacesCache() {
         log.info("Hot Place 캐시가 갱신되었습니다.");
+    }
+
+    public Spot updateSpotThumbnailWithGoogle(Long spotId) {
+        Spot spot = getSpotById(spotId);
+        
+        if (hasThumbnail(spot)) return spot;
+
+        byte[] imageBytes = fetchGooglePlaceImage(spot);
+        if (imageBytes == null || imageBytes.length == 0) return spot;
+
+        String uploadedUrl = uploadImageToS3(spot, imageBytes);
+        if (uploadedUrl != null) {
+            spot.setThumbnailUrl(uploadedUrl);
+            spotMapper.update(spot);
+            log.info("Successfully updated spot thumbnail via Google Maps: {}", uploadedUrl);
+        }
+        return spot;
+    }
+
+    private byte[] fetchGooglePlaceImage(Spot spot) {
+        try {
+            log.info("Fetching photo from Google Maps for spot: {}", spot.getName());
+            Place place = googleMapsClient.searchPlace(spot.getName(), spot.getLat(), spot.getLng());
+            
+            if (place != null && place.photos() != null && !place.photos().isEmpty()) {
+                return googleMapsClient.fetchPhoto(place.photos().get(0).name());
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch Google Place image: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private boolean hasThumbnail(Spot spot) {
+        return spot.getThumbnailUrl() != null && !spot.getThumbnailUrl().isBlank();
+    }
+
+    private String uploadImageToS3(Spot spot, byte[] imageBytes) {
+        try {
+            return s3Provider.upload(
+                imageBytes, 
+                spot.getName() + ".jpg", 
+                "image/jpeg", 
+                "spots/" + spot.getKakaoPlaceId() + "/"
+            );
+        } catch (Exception e) {
+            log.error("Failed to upload image to S3: {}", e.getMessage());
+            return null;
+        }
     }
 }

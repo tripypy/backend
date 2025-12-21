@@ -95,6 +95,29 @@ public class S3Provider {
         return baseUrl + "/" + key;
     }
 
+    public String upload(byte[] content, String originalFilename, String contentType, String prefix) {
+        if (content == null || content.length == 0) {
+            throw new FileException(FileErrorCode.EMPTY_FILE);
+        }
+
+        String key = createKey(prefix, originalFilename);
+
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .contentType(contentType)
+                    .contentLength((long) content.length)
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content));
+        } catch (Exception e) {
+            throw new FileException(FileErrorCode.FILE_UPLOAD_FAILED);
+        }
+
+        return baseUrl + "/" + key;
+    }
+
     public void deleteImage(String imageUrl) {
         if (imageUrl == null || imageUrl.isEmpty() || !imageUrl.startsWith(baseUrl)) {
             return;
