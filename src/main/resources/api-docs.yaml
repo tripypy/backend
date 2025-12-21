@@ -1,0 +1,1910 @@
+openapi: 3.0.3
+info:
+  title: TRIT API
+  version: 1.0.0
+servers:
+  - url: https://localhost:8080
+    description: Local server
+tags:
+  - name: auth
+    description: 인증 관련 API
+  - name: search
+    description: 검색 관련 API
+  - name: trip
+    description: 여행 관련 API
+  - name: spot-review
+    description: 장소 리뷰 관련 API
+  - name: triplog
+    description: 여행 기록 관련 API
+  - name: user
+    description: 사용자 관련 API
+paths:
+  /ai/chat:
+    post:
+      tags:
+        - ai
+      summary: AI 챗봇 (여행 코스 점검, 추천, 대화)
+      description: |
+        - 제공된 메시지 리스트(messages)를 그대로 AI에게 전달하여 응답을 받습니다.
+        - System Prompt, 이전 대화 내역 등 모든 컨텍스트는 Client가 구성해서 보내야 합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiChatRequestDto'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiChatResponseDto'
+  /ai/recommend-spot:
+    post:
+      tags:
+        - ai
+      summary: 장소 추천 (AI)
+      description: |
+        - 현재 여행 코스에 어울리는 최적의 장소를 후보군 중에서 선택하여 추천합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiSpotRecommendRequestDto'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiSpotRecommendResponseDto'
+  /ai/check-course:
+    post:
+      tags:
+        - ai
+      summary: 코스 점검 (AI)
+      description: |
+        - 제공된 코스(장소 리스트)를 분석하여 동선 효율성 및 카테고리 밸런스 등을 점검합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiCourseCheckRequestDto'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiChatResponseDto'
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: 로그인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDto'
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponseDto'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=...; Path=/; Secure; HttpOnly; SameSite=None
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: 로그아웃
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 로그아웃 성공
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=None
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/signup:
+    post:
+      tags:
+        - auth
+      summary: 회원가입
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequestDto'
+      responses:
+        '201':
+          description: 회원가입 성공
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/reset-password:
+    post:
+      tags:
+        - auth
+      summary: 비밀번호 재설정 요청
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestDto'
+      responses:
+        '200':
+          description: 성공
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/find-email/{nickname}:
+    get:
+      tags:
+        - auth
+      summary: 닉네임으로 이메일 찾기
+      parameters:
+        - name: nickname
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Access Token 갱신
+      parameters:
+        - name: refreshToken
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 토큰 갱신 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponseDto'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refreshToken=...; Path=/; Secure; HttpOnly; SameSite=None
+        '401':
+          description: 유효하지 않은 Refresh Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /search/spots:
+    get:
+      tags:
+        - search
+      summary: 장소 검색
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpotSearchDoc'
+  /search/trip-logs:
+    get:
+      tags:
+        - search
+      summary: 여행 기록 검색
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripLogSearchDoc'
+  /search/trips:
+    get:
+      tags:
+        - search
+      summary: 여행 검색
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripSearchDoc'
+  /trips:
+    post:
+      tags:
+        - trip
+      summary: 여행 생성
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: 여행 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetailResponseDto'
+    get:
+      tags:
+        - trip
+      summary: 내 여행 목록 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, PLANNED, COMPLETED]
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripResponseDto'
+  /trips/{tripId}:
+    get:
+      tags:
+        - trip
+      summary: 여행 상세 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetailResponseDto'
+    patch:
+      tags:
+        - trip
+      summary: 여행 수정
+      description: 모든 필드가 필요하지 않습니다. 부분적으로 업데이트가 가능합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripUpdateRequestDto'
+      responses:
+        '200':
+          description: 성공
+    delete:
+      tags:
+        - trip
+      summary: 여행 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 성공
+  /trips/{tripId}/items:
+    put:
+      description: 'items의 필드는 spotId 또는 spot 중 하나만 쓸 수 있습니다.'
+      tags:
+        - trip
+      summary: 여행 아이템 교체
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripItemsReplaceRequestDto'
+      responses:
+        '200':
+          description: 성공
+  /trips/{tripId}/scrap:
+    post:
+      tags:
+        - trip
+      summary: 여행 스크랩 (복사)
+      description: 다른 사용자의 공개된 여행 또는 자신의 여행을 복사하여 내 여행으로 저장합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 스크랩 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tripId:
+                    type: integer
+                    format: int64
+                description: 생성된 여행 ID
+  /trip-logs/images/presigned-url:
+    post:
+      tags:
+        - triplog
+      summary: 이미지 업로드용 Presigned URL 생성
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageUploadRequestDto'
+      responses:
+        '200':
+          description: |
+            생성 성공
+            
+            [주의사항]
+            1. 리턴받은 `presignedUrl`로 PUT 요청을 보내야 합니다.
+            2. Request Body는 `multipart/form-data`가 아닌 **Binary**로 파일을 직접 전송해야 합니다.
+            3. Header에 `Content-Type: {파일확장자타입}` (예: `image/png`, `image/jpeg`)을 반드시 포함해야 합니다.
+            4. Header에 `x-amz-acl: public-read`를 **반드시** 포함해야 합니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponseDto'
+  /trip-logs:
+    post:
+      tags:
+        - triplog
+      summary: 여행 기록 생성
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripLogCreateRequestDto'
+      responses:
+        '201':
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripLogCreateResponseDto'
+    get:
+      tags:
+        - triplog
+      summary: 여행 기록 조회 (유저별 또는 장소별)
+      description: |
+        - userId 제공 시: 해당 유저의 여행 기록을 페이징(Page)하여 조회합니다.
+        - spotId 제공 시: 해당 장소가 포함된 여행 기록을 무한스크롤(Slice)하여 조회합니다.
+        - 둘 중 하나는 반드시 포함되어야 합니다.
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          description: 유저 ID (유저별 조회 시 필수)
+          schema:
+            type: integer
+            format: int64
+        - name: spotId
+          in: query
+          required: false
+          description: 장소 ID (장소별 조회 시 필수)
+          schema:
+            type: integer
+            format: int64
+        - name: cursor
+          in: query
+          description: 커서 ID (장소별 조회 시 사용)
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          description: 페이지 번호 (유저별 조회 시 사용)
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: 조회 개수
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/PageTripLogFeedResponseDto'
+                  - $ref: '#/components/schemas/SliceTripLogFeedResponseDto'
+  /spots:
+    get:
+      tags:
+        - spot
+      summary: Kakao Place ID로 장소 조회
+      description: |
+        - Kakao Place ID로 DB에 저장된 장소를 조회합니다.
+        - 존재하지 않으면 404 Not Found를 반환합니다.
+      parameters:
+        - name: kakaoPlaceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotResponseDto'
+        '404':
+          description: 장소를 찾을 수 없음
+    post:
+      tags:
+        - spot
+      summary: 장소 생성 (Upsert)
+      description: |
+        - Kakao Place ID로 장소를 생성하거나 조회합니다.
+        - 이미 존재하면 200 OK와 함께 기존 장소 정보를 반환합니다.
+        - 존재하지 않으면 201 Created와 함께 새 장소를 생성하고 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpotRequestDto'
+      responses:
+        '200':
+          description: 이미 존재하는 장소 반환
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotResponseDto'
+        '201':
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotResponseDto'
+        '409':
+          description: 이미 존재하는 장소
+
+  /spots/{spotId}:
+    get:
+      tags:
+        - spot
+      summary: 장소 상세 조회
+      parameters:
+        - name: spotId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotResponseDto'
+        '404':
+          description: 장소를 찾을 수 없음
+    patch:
+      tags:
+        - spot
+      summary: 장소 정보 수정
+      parameters:
+        - name: spotId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpotRequestDto'
+      responses:
+        '200':
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotResponseDto'
+    delete:
+      tags:
+        - spot
+      summary: 장소 삭제
+      parameters:
+        - name: spotId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 삭제 성공
+        '404':
+          description: 장소를 찾을 수 없음
+  /search/place:
+    get:
+      tags:
+        - search
+      summary: 키워드 장소 검색 (Kakao API)
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: lat
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+        - name: lng
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpotResponseDto'
+  /spots/hot:
+    get:
+      tags:
+        - spot
+      summary: Hot Place Top 10 조회
+      description: 여행 계획에 가장 많이 추가된 상위 10개 장소를 조회합니다. (10분 캐싱)
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpotResponseDto'
+  /spot-reviews/me:
+    get:
+      tags:
+        - spot-review
+      summary: 내 리뷰 목록 조회 (필터링 가능)
+      description: |
+        - 로그인한 사용자가 작성한 리뷰 목록을 조회합니다.
+        - spotId 파라미터가 있으면 해당 장소에 대한 리뷰만 반환합니다 (0개 또는 1개).
+        - spotId 파라미터가 없으면 사용자가 작성한 모든 리뷰를 반환합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: spotId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpotReviewResponseDto'
+  /spot-reviews:
+    get:
+      tags:
+        - spot-review
+      summary: 장소 리뷰 목록 조회
+      parameters:
+        - name: spotId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotReviewListResponseDto'
+    post:
+      tags:
+        - spot-review
+      summary: 장소 리뷰 생성
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpotReviewRequestDto'
+      responses:
+        '201':
+          description: 생성 성공
+        '409':
+          description: 이미 리뷰를 작성함
+  /spot-reviews/stats:
+    get:
+      tags:
+        - spot-review
+      summary: 장소 리뷰 통계 조회
+      parameters:
+        - name: spotId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotReviewStatsResponseDto'
+  /spot-reviews/{reviewId}:
+    patch:
+      tags:
+        - spot-review
+      summary: 장소 리뷰 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpotReviewUpdateRequestDto'
+      responses:
+        '200':
+          description: 성공
+    delete:
+      tags:
+        - spot-review
+      summary: 장소 리뷰 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 성공
+  /trip-logs/feed:
+    get:
+      tags:
+        - triplog
+      summary: 여행 기록 피드 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SliceTripLogFeedResponseDto'
+  /trip-logs/{logId}:
+    get:
+      tags:
+        - triplog
+      summary: 여행 기록 상세 조회
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripLogDetailResponseDto'
+    patch:
+      tags:
+        - triplog
+      summary: 여행 기록 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripLogUpdateRequestDto'
+      responses:
+        '200':
+          description: 성공
+    delete:
+      tags:
+        - triplog
+      summary: 여행 기록 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 성공
+  /trip-logs/comments/{commentId}:
+    patch:
+      tags:
+        - trip-log-comment
+      summary: 여행 기록 댓글 수정
+      operationId: updateTripLogComment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripLogCommentRequestDto'
+        required: true
+      responses:
+        '200':
+          description: 댓글 수정 성공
+        '403':
+          description: 권한 없음 (작성자 불일치)
+        '404':
+          description: 댓글 없음
+    delete:
+      tags:
+        - trip-log-comment
+      summary: 여행 기록 댓글 삭제
+      operationId: deleteTripLogComment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 댓글 삭제 성공
+        '403':
+          description: 권한 없음
+        '404':
+          description: 댓글 없음
+  /trip-logs/{logId}/comments:
+    post:
+      tags:
+        - triplog
+      summary: 여행 기록 댓글 추가
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripLogCommentRequestDto'
+      responses:
+        '201':
+          description: 성공
+  /trip-logs/{logId}/likes/status:
+    get:
+      tags:
+        - triplog
+      summary: 여행 기록 좋아요 상태 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripLogLikeResponseDto'
+  /trip-logs/{logId}/likes:
+    post:
+      tags:
+        - triplog
+      summary: 여행 기록 좋아요
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripLogLikeResponseDto'
+    delete:
+      tags:
+        - triplog
+      summary: 여행 기록 좋아요 취소
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripLogLikeResponseDto'
+  /users/me:
+    get:
+      tags:
+        - user
+      summary: 내 정보 조회
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponseDto'
+    patch:
+      tags:
+        - user
+      summary: 내 정보 수정
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequestDto'
+      responses:
+        '200':
+          description: 성공
+  /users/me/analysis:
+    post:
+      tags:
+        - user
+      summary: 내 여행 스타일 AI 분석
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiTravelAnalysisDto'
+  /users/{userId}/profile:
+    get:
+      tags:
+        - user
+      summary: 사용자 프로필 조회
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicUserProfileResponseDto'
+  /users/{userId}/friends:
+    get:
+      tags:
+        - user
+      summary: 사용자 친구 목록 조회
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicUserProfileResponseDto'
+  /users/profile-image:
+    post:
+      tags:
+        - user
+      summary: 프로필 이미지 수정
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileImageUpdateResponseDto'
+    delete:
+      tags:
+        - user
+      summary: 프로필 이미지 삭제
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: 성공
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ImageUploadRequestDto:
+      type: object
+      properties:
+        fileName:
+          type: string
+          description: 업로드할 파일명 (확장자 포함)
+    PresignedUrlResponseDto:
+      type: object
+      properties:
+        presignedUrl:
+          type: string
+          description: S3 업로드용 Presigned URL
+        url:
+          type: string
+          description: 업로드될 파일의 접근 URL
+        key:
+          type: string
+          description: S3 객체 키
+    LoginRequestDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    LoginResponseDto:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+        email:
+          type: string
+        nickname:
+          type: string
+    SignupRequestDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        nickname:
+          type: string
+    PasswordResetRequestDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+    TokenResponseDto:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+    SpotSearchDoc:
+      type: object
+      properties:
+        spotId:
+          type: integer
+          format: int64
+        kakaoPlaceId:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        category:
+          type: string
+        location:
+          $ref: '#/components/schemas/GeoPoint'
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        placeUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+        reviewCount:
+          type: integer
+        averageRating:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+    GeoPoint:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+    TripLogSearchDoc:
+      type: object
+      properties:
+        log_id:
+          type: integer
+          format: int64
+        trip_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        trip_location_summary:
+          type: string
+        trip_start_date:
+          type: string
+          format: date
+        trip_end_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        image_urls:
+          type: array
+          items:
+            type: string
+    TripSearchDoc:
+      type: object
+      properties:
+        trip_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        location_summary:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        spot_names:
+          type: array
+          items:
+            type: string
+        spot_categories:
+          type: array
+          items:
+            type: string
+        spots_preview:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpotPreview'
+    SpotPreview:
+      type: object
+      properties:
+        spot_id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        category:
+          type: string
+    TripDetailResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        authorId:
+          type: integer
+          format: int64
+          description: 여행 생성자의 ID
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [DRAFT, PLANNED, COMPLETED]
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE]
+        locationSummary:
+          type: string
+        isOwner:
+          type: boolean
+          description: 조회한 사용자가 여행의 주인인지 여부
+        tripItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripItemResponseDto'
+    TripItemResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        dayNumber:
+          type: integer
+        orderIndex:
+          type: integer
+        spot:
+          $ref: '#/components/schemas/SpotResponseDto'
+    SpotResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        kakaoPlaceId:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        category:
+          type: string
+        lat:
+          type: number
+          format: bigdecimal
+        lng:
+          type: number
+          format: bigdecimal
+        placeUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+    TripResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [DRAFT, PLANNED, COMPLETED]
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE]
+        locationSummary:
+          type: string
+        isOwner:
+          type: boolean
+        spots:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        spotPreviews:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+        completedDate:
+          type: string
+          format: date
+    TripUpdateRequestDto:
+      type: object
+      properties:
+        title:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [DRAFT, PLANNED, COMPLETED]
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE]
+    TripItemsReplaceRequestDto:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/Day'
+    Day:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+    Item:
+      type: object
+      description: 'spotId 또는 spot 중 하나만 존재해야 합니다.'
+      properties:
+        spotId:
+          type: integer
+          format: int64
+          description: '기존에 등록된 여행지 ID'
+        spot:
+          $ref: '#/components/schemas/SpotRequestDto'
+      oneOf:
+        - required:
+            - spotId
+        - required:
+            - spot
+    SpotRequestDto:
+      type: object
+      properties:
+        kakaoPlaceId:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        category:
+          type: string
+        lat:
+          type: number
+          format: bigdecimal
+        lng:
+          type: number
+          format: bigdecimal
+        placeUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+    SliceTripLogFeedResponseDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripLogFeedResponseDto'
+        nextCursor:
+          type: integer
+          format: int64
+        hasNext:
+          type: boolean
+    PageTripLogFeedResponseDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripLogFeedResponseDto'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+    TripLogFeedResponseDto:
+      type: object
+      properties:
+        logId:
+          type: integer
+          format: int64
+        authorId:
+          type: integer
+          format: int64
+        authorNickname:
+          type: string
+        authorImageUrl:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        locationSummary:
+          type: string
+        likeCount:
+          type: integer
+        commentCount:
+          type: integer
+        liked:
+          type: boolean
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripLogImageResponseDto'
+        createdAt:
+          type: string
+          format: date-time
+    TripLogCreateRequestDto:
+      type: object
+      properties:
+        tripId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE]
+    TripLogCreateResponseDto:
+      type: object
+      properties:
+        logId:
+          type: integer
+          format: int64
+    TripLogUpdateRequestDto:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE]
+    TripLogImageResponseDto:
+      type: object
+      properties:
+        imageRefKey:
+          type: string
+        imageUrl:
+          type: string
+        orderIndex:
+          type: integer
+    TripLogDetailResponseDto:
+      type: object
+      properties:
+        logId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        locationSummary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        authorNickname:
+          type: string
+        authorImageUrl:
+          type: string
+        tripId:
+          type: integer
+          format: int64
+        tripTitle:
+          type: string
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripLogImageResponseDto'
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripLogCommentResponseDto'
+        likeCount:
+          type: integer
+        commentCount:
+          type: integer
+    TripLogCommentResponseDto:
+      type: object
+      properties:
+        commentId:
+          type: integer
+          format: int64
+        authorNickname:
+          type: string
+        authorImageUrl:
+          type: string
+        content:
+          type: string
+        parentId:
+          type: integer
+          format: int64
+          description: 부모 댓글 ID
+        createdAt:
+          type: string
+          format: date-time
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripLogCommentResponseDto'
+          description: 대댓글 리스트 (계층 구조)
+    TripLogCommentRequestDto:
+      type: object
+      properties:
+        content:
+          type: string
+        parentId:
+          type: integer
+          format: int64
+          description: 부모 댓글 ID (대댓글일 경우 필수)
+    TripLogLikeResponseDto:
+      type: object
+      properties:
+        liked:
+          type: boolean
+        likeCount:
+          type: integer
+    UserProfileResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        nickname:
+          type: string
+        profileImageUrl:
+          type: string
+        bio:
+          type: string
+        intro:
+          type: string
+        homeRegionId:
+          type: integer
+          format: int64
+        travelStyleSummary:
+          type: string
+        travelStyleId:
+          type: integer
+          format: int64
+        profileBannerUrl:
+          type: string
+        isProfilePublic:
+          type: boolean
+        friendsCount:
+          type: integer
+    UpdateUserRequestDto:
+      type: object
+      properties:
+        nickname:
+          type: string
+        bio:
+          type: string
+    PublicUserProfileResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nickname:
+          type: string
+        profileImageUrl:
+          type: string
+        bio:
+          type: string
+        intro:
+          type: string
+        homeRegionId:
+          type: integer
+          format: int64
+        travelStyleSummary:
+          type: string
+        travelStyleId:
+          type: integer
+          format: int64
+        profileBannerUrl:
+          type: string
+        isProfilePublic:
+          type: boolean
+        friendsCount:
+          type: integer
+    ProfileImageUpdateResponseDto:
+      type: object
+      properties:
+        newImageUrl:
+          type: string
+    AiTravelAnalysisDto:
+      type: object
+      properties:
+        keywords:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+        scores:
+          type: object
+          properties:
+            rest:
+              type: integer
+            exploration:
+              type: integer
+            activity:
+              type: integer
+            gourmet:
+              type: integer
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        invalidParams:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvalidParam'
+    InvalidParam:
+      type: object
+      properties:
+        name:
+          type: string
+        reason:
+          type: string
+    SpotReviewRequestDto:
+      type: object
+      properties:
+        spotId:
+          type: integer
+          format: int64
+        rating:
+          type: number
+          format: double
+        content:
+          type: string
+    SpotReviewResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        spotId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        userNickname:
+          type: string
+        userProfileImage:
+          type: string
+        rating:
+          type: number
+          format: double
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SpotReviewUpdateRequestDto:
+      type: object
+      properties:
+        rating:
+          type: number
+          format: double
+        content:
+          type: string
+    SpotReviewStatsResponseDto:
+      type: object
+      properties:
+        averageRating:
+          type: number
+          format: double
+        reviewCount:
+          type: integer
+          format: int64
+    SpotReviewListResponseDto:
+      type: object
+      properties:
+        myReview:
+          $ref: '#/components/schemas/SpotReviewResponseDto'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpotReviewResponseDto'
+    AiChatRequestDto:
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessageDto'
+    ChatMessageDto:
+      type: object
+      properties:
+        role:
+          type: string
+          description: user or assistant
+        content:
+          type: string
+
+    AiChatResponseDto:
+      type: object
+      properties:
+        text:
+          type: string
+    AiSpotRecommendRequestDto:
+      type: object
+      required:
+        - candidateSpots
+      properties:
+        currentSpots:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendSpotDto'
+        candidateSpots:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendSpotDto'
+    AiSpotRecommendResponseDto:
+      type: object
+      properties:
+        recommendedSpotName:
+          type: string
+        reason:
+          type: string
+    RecommendSpotDto:
+      type: object
+      required:
+        - name
+        - category
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        address:
+          type: string
+    AiCourseCheckRequestDto:
+      type: object
+      required:
+        - spots
+      properties:
+        spots:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendSpotDto'
