@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/trip-logs")
@@ -90,6 +92,16 @@ public class TripLogController {
     ) {
         final Long memberId = (userDetails != null) ? userDetails.getUser().getId() : null;
         return ResponseEntity.ok(tripLogService.getTripLogFeed(cursor, limit, memberId));
+    }
+
+    @GetMapping("/feed/friends")
+    public ResponseEntity<SliceDto<TripLogFeedResponseDto>> getFriendTripLogFeed(
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int limit,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUser().getId();
+        return ResponseEntity.ok(tripLogService.getFriendTripLogFeed(userId, cursor, limit, userId));
     }
 
     @GetMapping("/{logId}")

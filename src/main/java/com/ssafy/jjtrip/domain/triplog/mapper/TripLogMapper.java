@@ -323,11 +323,49 @@ public interface TripLogMapper {
 
     @Select("SELECT log_id FROM log_comment WHERE id = #{commentId}")
     Optional<Long> findLogIdByCommentId(Long commentId);
-    @Select("SELECT tl.id AS logId, tl.title, " +
-            "(SELECT tli.image_url FROM log_image tli WHERE tli.log_id = tl.id ORDER BY tli.order_index ASC LIMIT 1) AS thumbnailUrl " +
-            "FROM trip_log tl " +
-            "JOIN trip t ON tl.trip_id = t.id " +
-            "WHERE t.user_id = #{userId}")
+
+    @Select("""
+            <script>
+            SELECT
+                tl.id AS logId,
+                u.id AS authorId,
+                u.nickname AS authorNickname,
+                u.profile_image_url AS authorImageUrl,
+                tl.title,
+                tl.content,
+                t.location_summary AS locationSummary,
+                (SELECT COUNT(*) FROM log_like ll WHERE ll.log_id = tl.id) AS likeCount,
+                (SELECT COUNT(*) FROM log_comment lc WHERE lc.log_id = tl.id) AS commentCount,
+                <if test="memberId != null">
+                    EXISTS(SELECT 1 FROM log_like ll WHERE ll.log_id = tl.id AND ll.user_id = #{memberId}) AS liked,
+                </if>
+                <if test="memberId == null">
+                    0 AS liked,
+                </if>
+                tl.created_at AS createdAt
+            FROM trip_log tl
+            JOIN trip t ON tl.trip_id = t.id
+            JOIN user u ON t.user_id = u.id
+            WHERE tl.id IN
+            <foreach item='item' collection='logIds' open='(' separator=',' close=')'>
+                #{item}
+            </foreach>
+            ORDER BY FIELD(tl.id,
+            <foreach item='item' collection='logIds' separator=','>
+                #{item}
+            </foreach>
+            )
+            </script>
+            """)
+    List<TripLogFeedResponseDto.FeedData> findLogsByIds(@Param("logIds") List<Long> logIds, @Param("memberId") Long memberId);
+
+    @Select("""
+            SELECT tl.id AS logId, tl.title,
+            (SELECT tli.image_url FROM log_image tli WHERE tli.log_id = tl.id ORDER BY tli.order_index ASC LIMIT 1) AS thumbnailUrl
+            FROM trip_log tl
+            JOIN trip t ON tl.trip_id = t.id
+            WHERE t.user_id = #{userId}
+            """)
     List<TripLogSummaryDto> findSummariesByUserId(@Param("userId") Long userId);
 
     @Select("""
