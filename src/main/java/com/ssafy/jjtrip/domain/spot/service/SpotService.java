@@ -1,7 +1,6 @@
 package com.ssafy.jjtrip.domain.spot.service;
 
 import com.ssafy.jjtrip.common.google.GoogleMapsClient;
-import com.ssafy.jjtrip.common.google.dto.GoogleMapsDto.Photo;
 import com.ssafy.jjtrip.common.google.dto.GoogleMapsDto.Place;
 import com.ssafy.jjtrip.common.s3.S3Provider;
 import com.ssafy.jjtrip.domain.spot.dto.SpotUpsertResult;
@@ -108,26 +107,47 @@ public class SpotService {
     }
 
     private void enrichSpotWithGoogleImage(Spot spot) {
-        if (spot.getThumbnailUrl() != null && !spot.getThumbnailUrl().isBlank()) {
-            return;
-        }
+        if (hasThumbnail(spot)) return;
 
+        byte[] imageBytes = fetchGooglePlaceImage(spot);
+        if (imageBytes == null || imageBytes.length == 0) return;
+
+        String uploadedUrl = uploadImageToS3(spot, imageBytes);
+        if (uploadedUrl != null) {
+            spot.setThumbnailUrl(uploadedUrl);
+            log.info("Successfully uploaded Google Maps photo to S3: {}", uploadedUrl);
+        }
+    }
+
+    private byte[] fetchGooglePlaceImage(Spot spot) {
         try {
             log.info("Fetching photo from Google Maps for spot: {}", spot.getName());
             Place place = googleMapsClient.searchPlace(spot.getName(), spot.getLat(), spot.getLng());
             
             if (place != null && place.photos() != null && !place.photos().isEmpty()) {
-                Photo photo = place.photos().get(0);
-                byte[] imageBytes = googleMapsClient.fetchPhoto(photo.name());
-                
-                if (imageBytes != null && imageBytes.length > 0) {
-                    String uploadedUrl = s3Provider.upload(imageBytes, spot.getName() + ".jpg", "image/jpeg", "spots/" + spot.getKakaoPlaceId() + "/");
-                    spot.setThumbnailUrl(uploadedUrl);
-                    log.info("Successfully uploaded Google Maps photo to S3: {}", uploadedUrl);
-                }
+                return googleMapsClient.fetchPhoto(place.photos().get(0).name());
             }
         } catch (Exception e) {
-            log.error("Failed to enrich spot with Google Image: {}", e.getMessage());
+            log.error("Failed to fetch Google Place image: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private boolean hasThumbnail(Spot spot) {
+        return spot.getThumbnailUrl() != null && !spot.getThumbnailUrl().isBlank();
+    }
+
+    private String uploadImageToS3(Spot spot, byte[] imageBytes) {
+        try {
+            return s3Provider.upload(
+                imageBytes, 
+                spot.getName() + ".jpg", 
+                "image/jpeg", 
+                "spots/" + spot.getKakaoPlaceId() + "/"
+            );
+        } catch (Exception e) {
+            log.error("Failed to upload image to S3: {}", e.getMessage());
+            return null;
         }
     }
 }
