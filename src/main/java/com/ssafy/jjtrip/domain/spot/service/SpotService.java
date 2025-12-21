@@ -27,18 +27,6 @@ public class SpotService {
     private final S3Provider s3Provider;
     private final GoogleMapsClient googleMapsClient;
 
-
-    public Spot createSpot(Spot spot) {
-        if (spotMapper.findByKakaoPlaceId(spot.getKakaoPlaceId()).isPresent()) {
-            throw new SpotException(SpotErrorCode.ALREADY_EXISTS);
-        }
-        
-        enrichSpotWithGoogleImage(spot);
-        
-        spotMapper.insert(spot);
-        return spot;
-    }
-
     public Spot getSpotById(Long spotId) {
         return spotMapper.findById(spotId)
                 .orElseThrow(() -> new SpotException(SpotErrorCode.SPOT_NOT_FOUND));
@@ -67,7 +55,6 @@ public class SpotService {
     public Spot findOrCreate(Spot spot) {
         return spotMapper.findByKakaoPlaceId(spot.getKakaoPlaceId())
                 .orElseGet(() -> {
-                    enrichSpotWithGoogleImage(spot);
                     spotMapper.insert(spot);
                     return spot;
                 });
@@ -77,7 +64,6 @@ public class SpotService {
         return spotMapper.findByKakaoPlaceId(spot.getKakaoPlaceId())
                 .map(existingSpot -> new SpotUpsertResult(existingSpot, false))
                 .orElseGet(() -> {
-                    enrichSpotWithGoogleImage(spot);
                     spotMapper.insert(spot);
                     return new SpotUpsertResult(spot, true);
                 });
@@ -106,17 +92,21 @@ public class SpotService {
         log.info("Hot Place 캐시가 갱신되었습니다.");
     }
 
-    private void enrichSpotWithGoogleImage(Spot spot) {
-        if (hasThumbnail(spot)) return;
+    public Spot updateSpotThumbnailWithGoogle(Long spotId) {
+        Spot spot = getSpotById(spotId);
+        
+        if (hasThumbnail(spot)) return spot;
 
         byte[] imageBytes = fetchGooglePlaceImage(spot);
-        if (imageBytes == null || imageBytes.length == 0) return;
+        if (imageBytes == null || imageBytes.length == 0) return spot;
 
         String uploadedUrl = uploadImageToS3(spot, imageBytes);
         if (uploadedUrl != null) {
             spot.setThumbnailUrl(uploadedUrl);
-            log.info("Successfully uploaded Google Maps photo to S3: {}", uploadedUrl);
+            spotMapper.update(spot);
+            log.info("Successfully updated spot thumbnail via Google Maps: {}", uploadedUrl);
         }
+        return spot;
     }
 
     private byte[] fetchGooglePlaceImage(Spot spot) {
