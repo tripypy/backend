@@ -76,7 +76,7 @@ public class TripLogService {
         TripLog savedTripLog = tripLogMapper.findById(tripLog.getId())
                 .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
 
-        Trip trip = tripService.getTripDetail(savedTripLog.getTripId(), userId);
+        Trip trip = tripService.findTripById(savedTripLog.getTripId());
         List<String> imageUrls = extractImageUrls(savedTripLog.getContent());
         tripLogSearchService.saveTripLog(savedTripLog, trip, imageUrls);
 
@@ -225,7 +225,7 @@ public class TripLogService {
         }
 
         TripLog updatedLog = tripLogMapper.findById(logId).orElseThrow();
-        Trip trip = tripService.getTripDetail(updatedLog.getTripId(), userId);
+        Trip trip = tripService.findTripById(updatedLog.getTripId());
         List<String> imageUrls = extractImageUrls(updatedLog.getContent());
         tripLogSearchService.saveTripLog(updatedLog, trip, imageUrls);
     }

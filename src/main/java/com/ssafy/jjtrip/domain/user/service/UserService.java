@@ -11,6 +11,7 @@ import com.ssafy.jjtrip.domain.trip.entity.Trip;
 import com.ssafy.jjtrip.domain.trip.entity.TripStatus;
 import com.ssafy.jjtrip.domain.trip.mapper.TripMapper;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogSummaryDto;
+import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
 import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
 import com.ssafy.jjtrip.domain.user.dto.request.UpdateUserRequestDto;
 import com.ssafy.jjtrip.domain.user.dto.response.ProfileImageUpdateResponseDto;
@@ -114,7 +115,12 @@ public class UserService {
                             .stream()
                             .map(TripResponseDto.SpotPreviewDto::new)
                             .collect(Collectors.toList());
-                    return TripResponseDto.from(trip, isOwner, spots, tags, spotPreviews);
+                    TripLog log = tripLogMapper.findByTripId(trip.getId())
+                            .stream()
+                            .findFirst()
+                            .orElse(null);
+                    Long logId = (log != null) ? log.getId() : null;
+                    return TripResponseDto.from(trip, isOwner, spots, tags, spotPreviews, logId);
                 })
                 .collect(Collectors.toList());
     }
@@ -124,7 +130,12 @@ public class UserService {
                 .filter(trip -> trip.getStatus() == TripStatus.COMPLETED)
                 .map(trip -> {
                     trip.setTripItems(tripMapper.selectItemsWithSpotsByTripId(trip.getId()));
-                    return TripDetailResponseDto.from(trip, viewerId);
+                    TripLog log = tripLogMapper.findByTripId(trip.getId())
+                            .stream()
+                            .findFirst()
+                            .orElse(null);
+                    Long logId = (log != null) ? log.getId() : null;
+                    return TripDetailResponseDto.from(trip, viewerId, logId);
                 })
                 .collect(Collectors.toList());
     }
