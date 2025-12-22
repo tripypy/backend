@@ -8,6 +8,8 @@ import com.ssafy.jjtrip.domain.friend.entity.Friendship;
 import com.ssafy.jjtrip.domain.friend.exception.FriendErrorCode;
 import com.ssafy.jjtrip.domain.friend.exception.FriendException;
 import com.ssafy.jjtrip.domain.friend.mapper.FriendMapper;
+import com.ssafy.jjtrip.domain.notification.entity.NotificationType;
+import com.ssafy.jjtrip.domain.notification.service.NotificationService;
 import com.ssafy.jjtrip.domain.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class FriendService {
 
     private final FriendMapper friendMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     @Transactional
     public void sendRequest(Long requesterId, Long receiverId) {
@@ -52,6 +55,8 @@ public class FriendService {
                 .receiverId(receiverId)
                 .build();
         friendMapper.saveRequest(friendRequest);
+
+        notificationService.send(requesterId, receiverId, NotificationType.FRIEND_REQUEST, null, requesterId, "/friends");
     }
 
     public List<FriendRequestResponseDto> getReceivedRequests(Long userId) {
@@ -85,6 +90,8 @@ public class FriendService {
                 .userIdB(userIdB)
                 .build();
         friendMapper.saveFriendship(friendship);
+
+        notificationService.send(acceptingUserId, friendRequest.getRequesterId(), NotificationType.FRIEND_ACCEPT, null, acceptingUserId, "/friends");
 
         // 친구 요청 기록 삭제
         friendMapper.deleteRequestById(requestId);
