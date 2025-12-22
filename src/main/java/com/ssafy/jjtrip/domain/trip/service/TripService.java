@@ -1,5 +1,7 @@
 package com.ssafy.jjtrip.domain.trip.service;
 
+import com.ssafy.jjtrip.domain.notification.entity.NotificationType;
+import com.ssafy.jjtrip.domain.notification.service.NotificationService;
 import com.ssafy.jjtrip.domain.search.service.TripLogSearchService;
 import com.ssafy.jjtrip.domain.search.service.TripSearchService;
 import com.ssafy.jjtrip.domain.spot.service.SpotService;
@@ -33,6 +35,7 @@ public class TripService {
     private final TripSearchService tripSearchService;
     private final TripLogMapper tripLogMapper;
     private final TripLogSearchService tripLogSearchService;
+    private final NotificationService notificationService;
 
     @Transactional
     public Trip createTrip(Long userId) {
@@ -200,6 +203,8 @@ public class TripService {
         // Sync new scrap trip (Private by default)
         List<TripItem> items = tripMapper.selectItemsWithSpotsByTripId(newTrip.getId());
         tripSearchService.saveTrip(newTrip, items);
+
+        notificationService.send(userId, sourceTrip.getUserId(), NotificationType.SCRAP, null, tripId, "/trip/" + tripId);
         
         return newTrip.getId();
     }

@@ -1,5 +1,7 @@
 package com.ssafy.jjtrip.domain.triplog.service;
 
+import com.ssafy.jjtrip.domain.notification.entity.NotificationType;
+import com.ssafy.jjtrip.domain.notification.service.NotificationService;
 import com.ssafy.jjtrip.domain.triplog.dto.request.TripLogCommentRequestDto;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCommentFlatDto;
 import com.ssafy.jjtrip.domain.triplog.dto.response.TripLogCommentResponseDto;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TripLogCommentService {
 
     private final TripLogMapper tripLogMapper;
+    private final NotificationService notificationService;
 
     @Transactional
     public void addComment(Long logId, Long userId, TripLogCommentRequestDto commentRequestDto) {
@@ -33,6 +36,10 @@ public class TripLogCommentService {
                 .content(commentRequestDto.content())
                 .build();
         tripLogMapper.insertComment(comment);
+
+        tripLogMapper.findAuthorIdByLogId(logId).ifPresent(authorId -> {
+            notificationService.send(userId, authorId, NotificationType.COMMENT, commentRequestDto.content(), logId, "/triplog/" + logId);
+        });
     }
 
     @Transactional

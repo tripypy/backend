@@ -252,7 +252,49 @@ INSERT INTO `user_status` (id, code, name, description) VALUES
 (2, 'DELETED', '탈퇴', '탈퇴 또는 비활성 사용자');
 
 -- 기본 Trip Status
+
 INSERT INTO `trip_status` (id, code, name, description) VALUES
+
 (1, 'DRAFT',     '작성 중',   '작성 중인 여행 계획'),
+
 (2, 'PLANNED',   '계획 완료', '여행 계획 완료 상태'),
+
 (3, 'COMPLETED', '여행 완료', '여행이 실제로 완료된 상태');
+
+
+
+-- ==========================================
+
+-- 🔔 5. 알림 (Notification Domain)
+
+-- ==========================================
+
+
+
+CREATE TABLE `notification` (
+
+  `id`          BIGINT NOT NULL AUTO_INCREMENT,
+
+  `receiver_id` BIGINT NOT NULL,
+
+  `sender_id`   BIGINT NOT NULL,
+
+  `type`        VARCHAR(50) NOT NULL,
+
+  `message`     VARCHAR(255) NOT NULL,
+
+  `target_id`   BIGINT,
+
+  `target_url`  VARCHAR(255),
+
+  `is_read`     BOOLEAN DEFAULT FALSE,
+
+  `created_at`  DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+
+  CONSTRAINT `fk_notification_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+
+  CONSTRAINT `fk_notification_sender` FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
