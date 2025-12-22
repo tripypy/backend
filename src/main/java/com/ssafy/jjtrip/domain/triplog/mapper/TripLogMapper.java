@@ -72,6 +72,7 @@ public interface TripLogMapper {
                     tl.id &lt; #{cursor}
                 </if>
                 AND tl.visibility = 'PUBLIC'
+                AND t.visibility = 'PUBLIC'
             </where>
             ORDER BY
                 tl.id DESC
