@@ -17,9 +17,10 @@ public record TripDetailResponseDto(
     TripVisibility visibility,
     String locationSummary,
     boolean isOwner,
-    List<TripItemResponseDto> tripItems
+    List<TripItemResponseDto> tripItems,
+    Long logId
 ) {
-    public static TripDetailResponseDto from(Trip entity, Long currentUserId) {
+    public static TripDetailResponseDto from(Trip entity, Long currentUserId, Long logId) {
         List<TripItemResponseDto> itemDtos = entity.getTripItems().stream()
                 .map(TripItemResponseDto::from)
                 .collect(Collectors.toList());
@@ -36,7 +37,8 @@ public record TripDetailResponseDto(
                 entity.getVisibility(),
                 entity.getLocationSummary(),
                 isOwner,
-                itemDtos
+                itemDtos,
+                logId
         );
     }
 }

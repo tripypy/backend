@@ -1,7 +1,9 @@
 package com.ssafy.jjtrip.domain.trip.service;
 
+import com.ssafy.jjtrip.domain.search.service.TripLogSearchService;
 import com.ssafy.jjtrip.domain.search.service.TripSearchService;
 import com.ssafy.jjtrip.domain.spot.service.SpotService;
+import com.ssafy.jjtrip.domain.trip.dto.TripDetailResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripItemsReplaceRequestDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripResponseDto;
 import com.ssafy.jjtrip.domain.trip.dto.TripUpdateRequestDto;
@@ -12,7 +14,6 @@ import com.ssafy.jjtrip.domain.trip.entity.TripVisibility;
 import com.ssafy.jjtrip.domain.trip.exception.TripErrorCode;
 import com.ssafy.jjtrip.domain.trip.exception.TripException;
 import com.ssafy.jjtrip.domain.trip.mapper.TripMapper;
-import com.ssafy.jjtrip.domain.search.service.TripLogSearchService;
 import com.ssafy.jjtrip.domain.triplog.entity.TripLog;
 import com.ssafy.jjtrip.domain.triplog.mapper.TripLogMapper;
 import java.util.Collections;
@@ -73,10 +74,15 @@ public class TripService {
         // Tags are not implemented yet, so return an empty list
         List<String> tags = List.of();
 
-        return TripResponseDto.from(trip, isOwner, spots, tags, spotPreviews);
+        Long logId = tripLogMapper.findByTripId(trip.getId()).stream()
+                .findFirst()
+                .map(TripLog::getId)
+                .orElse(null);
+
+        return TripResponseDto.from(trip, isOwner, spots, tags, spotPreviews, logId);
     }
 
-    public Trip getTripDetail(Long tripId, Long userId) {
+    public TripDetailResponseDto getTripDetail(Long tripId, Long userId) {
         Trip trip = findTripById(tripId);
 
         if (trip.getVisibility() != TripVisibility.PUBLIC && (userId == null || !trip.getUserId().equals(userId))) {
@@ -85,7 +91,13 @@ public class TripService {
 
         List<TripItem> tripItems = tripMapper.selectItemsWithSpotsByTripId(tripId);
         trip.setTripItems(tripItems);
-        return trip;
+
+        Long logId = tripLogMapper.findByTripId(tripId).stream()
+                .findFirst()
+                .map(TripLog::getId)
+                .orElse(null);
+
+        return TripDetailResponseDto.from(trip, userId, logId);
     }
 
     @Transactional
@@ -151,7 +163,7 @@ public class TripService {
         return spotService.findOrCreate(item.spot().toEntity()).getId();
     }
 
-    private Trip findTripById(Long tripId) {
+    public Trip findTripById(Long tripId) {
         return tripMapper.selectById(tripId)
                 .orElseThrow(() -> new TripException(TripErrorCode.TRIP_NOT_FOUND));
     }

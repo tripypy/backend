@@ -19,9 +19,9 @@ public record TripResponseDto(
     int spots,
     List<String> tags,
     List<SpotPreviewDto> spotPreviews,
-    LocalDate completedDate
+    Long logId
 ) {
-    public static TripResponseDto from(Trip entity, boolean isOwner, int spots, List<String> tags, List<SpotPreviewDto> spotPreviews) {
+    public static TripResponseDto from(Trip entity, boolean isOwner, int spots, List<String> tags, List<SpotPreviewDto> spotPreviews, Long logId) {
         return new TripResponseDto(
                 entity.getId(),
                 entity.getTitle(),
@@ -34,7 +34,7 @@ public record TripResponseDto(
                 spots,
                 tags,
                 spotPreviews,
-                entity.getStatus() == TripStatus.COMPLETED ? entity.getEndDate() : null
+                logId
         );
     }
 
