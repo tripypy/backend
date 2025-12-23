@@ -141,6 +141,13 @@ public interface UserMapper {
             "SELECT COUNT(*) FROM friendship f WHERE f.user_id_a = up.user_id OR f.user_id_b = up.user_id)")
     void syncAllFriendsCounts();
 
+    @Update("UPDATE user_profile SET friends_count = friends_count + 1 WHERE user_id = #{userId}")
+    void incrementFriendsCount(@Param("userId") Long userId);
+
+    @Update("UPDATE user_profile SET friends_count = GREATEST(friends_count - 1, 0) WHERE user_id = #{userId}")
+    void decrementFriendsCount(@Param("userId") Long userId);
+
+
 
     @Select("SELECT id, nickname, profile_image_url " +
             "FROM user WHERE nickname LIKE CONCAT('%', #{nickname}, '%')")

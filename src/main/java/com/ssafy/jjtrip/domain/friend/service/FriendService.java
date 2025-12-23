@@ -98,6 +98,10 @@ public class FriendService {
                 .build();
         friendMapper.saveFriendship(friendship);
 
+        // 양쪽 유저의 친구 수 증가
+        userMapper.incrementFriendsCount(friendRequest.getRequesterId());
+        userMapper.incrementFriendsCount(friendRequest.getReceiverId());
+
         notificationService.send(acceptingUserId, friendRequest.getRequesterId(), NotificationType.FRIEND_ACCEPT, null, acceptingUserId, "/friends");
 
         // 친구 요청 기록 삭제
@@ -150,5 +154,9 @@ public class FriendService {
 
         // 3. 친구 관계 삭제
         friendMapper.deleteFriendship(userIdA, userIdB);
+
+        // 양쪽 유저의 친구 수 감소
+        userMapper.decrementFriendsCount(myUserId);
+        userMapper.decrementFriendsCount(friendId);
     }
 }
