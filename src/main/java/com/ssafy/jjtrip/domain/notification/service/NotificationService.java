@@ -78,6 +78,7 @@ public class NotificationService {
                 .targetId(targetId)
                 .targetUrl(targetUrl)
                 .isRead(false)
+                .createdAt(java.time.LocalDateTime.now())
                 .build();
         
         notificationMapper.save(notification);

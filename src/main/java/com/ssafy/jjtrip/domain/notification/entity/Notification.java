@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.notification.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -14,8 +15,11 @@ public class Notification {
     private Long senderId;
     private NotificationType type;
     private String message;
-    private Long targetId;    // TripLog ID, Trip ID, or User ID
-    private String targetUrl; // Frontend direct link
+    private Long targetId;
+    private String targetUrl;
+    
+    @JsonProperty("isRead")
     private boolean isRead;
+    
     private LocalDateTime createdAt;
 }

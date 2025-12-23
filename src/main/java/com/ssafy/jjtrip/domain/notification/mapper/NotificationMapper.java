@@ -9,7 +9,7 @@ import java.util.List;
 public interface NotificationMapper {
 
     @Insert("INSERT INTO notification (receiver_id, sender_id, type, message, target_id, target_url, is_read, created_at) " +
-            "VALUES (#{receiverId}, #{senderId}, #{type}, #{message}, #{targetId}, #{targetUrl}, #{isRead}, NOW())")
+            "VALUES (#{receiverId}, #{senderId}, #{type}, #{message}, #{targetId}, #{targetUrl}, #{isRead}, #{createdAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void save(Notification notification);
 
