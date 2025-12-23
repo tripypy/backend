@@ -363,7 +363,7 @@ public interface TripLogMapper {
     List<TripLogFeedResponseDto.FeedData> findLogsByIds(@Param("logIds") List<Long> logIds, @Param("memberId") Long memberId);
 
     @Select("""
-            SELECT tl.id AS logId, tl.title,
+            SELECT tl.id AS logId, tl.trip_id AS tripId, tl.title,
             (SELECT tli.image_url FROM log_image tli WHERE tli.log_id = tl.id ORDER BY tli.order_index ASC LIMIT 1) AS thumbnailUrl
             FROM trip_log tl
             JOIN trip t ON tl.trip_id = t.id
