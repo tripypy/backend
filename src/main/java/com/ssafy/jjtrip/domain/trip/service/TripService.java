@@ -192,6 +192,15 @@ public class TripService {
     }
 
     @Transactional
+    public void completeTrip(Long tripId) {
+        Trip trip = findTripById(tripId);
+        if (trip.getStatus() != TripStatus.COMPLETED) {
+            trip.setStatus(TripStatus.COMPLETED);
+            tripMapper.update(trip);
+        }
+    }
+
+    @Transactional
     public Long scrapTrip(Long tripId, Long userId) {
         Trip sourceTrip = getValidatedSourceTrip(tripId, userId);
         Trip newTrip = Trip.createScrap(sourceTrip, userId);

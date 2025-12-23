@@ -78,6 +78,8 @@ public class TripLogService {
         TripLog savedTripLog = tripLogMapper.findById(tripLog.getId())
                 .orElseThrow(() -> new TripLogException(TripLogErrorCode.LOG_NOT_FOUND));
 
+        tripService.completeTrip(savedTripLog.getTripId());
+
         Trip trip = tripService.findTripById(savedTripLog.getTripId());
         List<String> imageUrls = extractImageUrls(savedTripLog.getContent());
         tripLogSearchService.saveTripLog(savedTripLog, trip, imageUrls);
