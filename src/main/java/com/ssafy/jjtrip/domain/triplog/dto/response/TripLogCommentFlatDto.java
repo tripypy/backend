@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record TripLogCommentFlatDto(
         Long commentId,
+        Long authorId,
         String authorNickname,
         String authorImageUrl,
         String content,

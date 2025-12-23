@@ -5,6 +5,7 @@ import java.util.List;
 
 public record TripLogCommentResponseDto(
         Long commentId,
+        Long authorId,
         String authorNickname,
         String authorImageUrl,
         String content,
@@ -15,6 +16,7 @@ public record TripLogCommentResponseDto(
     public static TripLogCommentResponseDto from(TripLogCommentFlatDto flatDto, List<TripLogCommentResponseDto> replies) {
         return new TripLogCommentResponseDto(
             flatDto.commentId(),
+            flatDto.authorId(),
             flatDto.authorNickname(),
             flatDto.authorImageUrl(),
             flatDto.content(),
