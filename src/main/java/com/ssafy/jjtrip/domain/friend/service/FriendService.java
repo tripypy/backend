@@ -11,6 +11,7 @@ import com.ssafy.jjtrip.domain.friend.mapper.FriendMapper;
 import com.ssafy.jjtrip.domain.notification.entity.NotificationType;
 import com.ssafy.jjtrip.domain.notification.service.NotificationService;
 import com.ssafy.jjtrip.domain.user.mapper.UserMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,12 @@ public class FriendService {
     private final FriendMapper friendMapper;
     private final UserMapper userMapper;
     private final NotificationService notificationService;
+
+    @PostConstruct
+    @Transactional
+    public void init() {
+        userMapper.syncAllFriendsCounts();
+    }
 
     @Transactional
     public void sendRequest(Long requesterId, Long receiverId) {

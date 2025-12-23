@@ -137,6 +137,11 @@ public interface UserMapper {
     @Update("UPDATE user_profile SET travel_style_summary = #{summary} WHERE user_id = #{userId}")
     void updateTravelStyleSummary(@Param("userId") Long userId, @Param("summary") String summary);
 
+    @Update("UPDATE user_profile up SET friends_count = (" +
+            "SELECT COUNT(*) FROM friendship f WHERE f.user_id_a = up.user_id OR f.user_id_b = up.user_id)")
+    void syncAllFriendsCounts();
+
+
     @Select("SELECT id, nickname, profile_image_url " +
             "FROM user WHERE nickname LIKE CONCAT('%', #{nickname}, '%')")
     @Results({
