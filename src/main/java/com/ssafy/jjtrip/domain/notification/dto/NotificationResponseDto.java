@@ -1,5 +1,6 @@
 package com.ssafy.jjtrip.domain.notification.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ssafy.jjtrip.domain.notification.entity.Notification;
 import com.ssafy.jjtrip.domain.notification.entity.NotificationType;
 import lombok.Builder;
@@ -12,13 +13,16 @@ import java.time.LocalDateTime;
 public class NotificationResponseDto {
     private Long id;
     private Long senderId;
-    private String senderNickname; // To display sender's name
-    private String senderProfileImageUrl; // Optional: To display sender's profile image
+    private String senderNickname;
+    private String senderProfileImageUrl;
     private NotificationType type;
     private String message;
     private Long targetId;
     private String targetUrl;
+    
+    @JsonProperty("isRead")
     private boolean isRead;
+    
     private LocalDateTime createdAt;
 
     public static NotificationResponseDto from(Notification notification, String senderNickname, String senderProfileImageUrl) {
