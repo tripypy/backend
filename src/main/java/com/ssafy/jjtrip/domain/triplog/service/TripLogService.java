@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -198,8 +200,8 @@ public class TripLogService {
     private List<String> extractImageUrls(String content) {
         if (content == null || content.isBlank()) return Collections.emptyList();
         List<String> urls = new java.util.ArrayList<>();
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("!\\[.*?\\]\\((.*?)\\)");
-        java.util.regex.Matcher matcher = pattern.matcher(content);
+        Pattern pattern = Pattern.compile("<img\\s+[^>]*src\\s*=\s*['\"]([^'\"]+)['\"][^>]*>");
+        Matcher matcher = pattern.matcher(content);
         while (matcher.find()) {
             urls.add(matcher.group(1));
         }
@@ -235,7 +237,8 @@ public class TripLogService {
             return;
         }
 
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("!\\[.*?\\]\\((.*?)\\)");
+        // HTML img tag regex: matches <img ... src="url" ... >
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<img\\s+[^>]*src\\s*=\s*['\"]([^'\"]+)['\"][^>]*>");
         java.util.regex.Matcher matcher = pattern.matcher(content);
 
         int orderIndex = 0;
