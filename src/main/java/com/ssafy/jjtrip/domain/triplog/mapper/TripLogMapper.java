@@ -246,6 +246,7 @@ public interface TripLogMapper {
 
     @Select("SELECT " +
             "c.id as commentId, " +
+            "u.id as authorId, " +
             "u.nickname as authorNickname, " +
             "u.profile_image_url as authorImageUrl, " +
             "c.content, " +
@@ -259,6 +260,7 @@ public interface TripLogMapper {
 
     @ConstructorArgs({
             @Arg(column = "commentId", javaType = Long.class),
+            @Arg(column = "authorId", javaType = Long.class),
             @Arg(column = "authorNickname", javaType = String.class),
             @Arg(column = "authorImageUrl", javaType = String.class),
             @Arg(column = "content", javaType = String.class),

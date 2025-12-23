@@ -134,6 +134,7 @@ public class TripLogCommentService {
 
         return new TripLogCommentResponseDto(
                 flat.commentId(),
+                flat.authorId(),
                 authorNickname,
                 authorImageUrl,
                 content,
