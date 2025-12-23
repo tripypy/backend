@@ -12,6 +12,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @RestController
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
@@ -20,7 +22,8 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public SseEmitter subscribe(@AuthenticationPrincipal CustomUserDetails userDetails, HttpServletResponse response) {
+        response.setHeader("X-Accel-Buffering", "no");
         return notificationService.subscribe(userDetails.getUser().getId());
     }
 
