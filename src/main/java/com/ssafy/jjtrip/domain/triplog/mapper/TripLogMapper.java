@@ -109,7 +109,7 @@ public interface TripLogMapper {
             <where>
                 AND u.id = #{authorId}
                 AND (
-                    tl.visibility = 'PUBLIC'
+                    (tl.visibility = 'PUBLIC' AND t.visibility = 'PUBLIC')
                     OR (#{memberId} != null AND #{memberId} = #{authorId})
                 )
             </where>
@@ -147,6 +147,7 @@ public interface TripLogMapper {
                 user u ON t.user_id = u.id
             WHERE
                 tl.visibility = 'PUBLIC'
+                AND t.visibility = 'PUBLIC'
                 AND EXISTS (
                     SELECT 1 FROM trip_item ti 
                     WHERE ti.trip_id = t.id 
@@ -171,7 +172,7 @@ public interface TripLogMapper {
             <where>
                 AND u.id = #{authorId}
                 AND (
-                    tl.visibility = 'PUBLIC'
+                    (tl.visibility = 'PUBLIC' AND t.visibility = 'PUBLIC')
                     OR (#{memberId} != null AND #{memberId} = #{authorId})
                 )
             </where>
@@ -349,7 +350,9 @@ public interface TripLogMapper {
             FROM trip_log tl
             JOIN trip t ON tl.trip_id = t.id
             JOIN user u ON t.user_id = u.id
-            WHERE tl.id IN
+            WHERE tl.visibility = 'PUBLIC'
+            AND t.visibility = 'PUBLIC'
+            AND tl.id IN
             <foreach item='item' collection='logIds' open='(' separator=',' close=')'>
                 #{item}
             </foreach>
