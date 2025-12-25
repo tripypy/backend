@@ -108,10 +108,13 @@ public interface TripLogMapper {
                 user u ON t.user_id = u.id
             <where>
                 AND u.id = #{authorId}
-                AND (
-                    (tl.visibility = 'PUBLIC' AND t.visibility = 'PUBLIC')
-                    OR (#{memberId} != null AND #{memberId} = #{authorId})
-                )
+                <choose>
+                    <when test="memberId != null and memberId == authorId">
+                    </when>
+                    <otherwise>
+                        AND tl.visibility = 'PUBLIC' AND t.visibility = 'PUBLIC'
+                    </otherwise>
+                </choose>
             </where>
             ORDER BY
                 tl.id DESC
@@ -171,10 +174,13 @@ public interface TripLogMapper {
             JOIN user u ON t.user_id = u.id
             <where>
                 AND u.id = #{authorId}
-                AND (
-                    (tl.visibility = 'PUBLIC' AND t.visibility = 'PUBLIC')
-                    OR (#{memberId} != null AND #{memberId} = #{authorId})
-                )
+                <choose>
+                    <when test="memberId != null and memberId == authorId">
+                    </when>
+                    <otherwise>
+                        AND tl.visibility = 'PUBLIC' AND t.visibility = 'PUBLIC'
+                    </otherwise>
+                </choose>
             </where>
             </script>
             """)
